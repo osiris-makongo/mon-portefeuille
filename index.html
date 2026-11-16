@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mon Portefeuille</title>
 <meta name="theme-color" content="#1f4a37">
+<meta name="color-scheme" content="only light">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -12,6 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="robots" content="noindex">
 <style>
+  :root { color-scheme: only light; }
 :root {
   --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 14px; --cds-gap-lg: 22px; --cds-gap-xl: 32px;
   --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 18px; --cds-radius: 2px;
@@ -124,7 +126,7 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
   --cds-chart-reference: var(--pf-brass-soft); --cds-chart-muted: var(--pf-ink-2);
   --cds-surface-popover: #fbf6e8; --cds-border: var(--pf-brass); --cds-shadow-popover: 0 6px 18px rgba(42, 33, 24, 0.25);
   --pf-accent: var(--pf-green);
-  color-scheme: light;
+  color-scheme: only light;
   font-family: var(--pf-text) !important;
   background-color: var(--pf-paper);
   background-image:
@@ -221,7 +223,14 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 .pf-per-btn + .pf-per-btn { border-left: 1px solid var(--color-border-line); }
 .pf-per-btn[aria-pressed="true"] { background: var(--color-panel); color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
 .pf-per-btn:focus-visible { outline: 2px solid var(--color-fg); outline-offset: -2px; }
-.pf-marche { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--cds-gap-sm); margin-top: var(--cds-gap-sm); font-size: var(--cds-font-size-body); color: var(--color-fg-muted); line-height: 1.5; max-width: 72ch; }
+.pf-marche { display: flex; flex-direction: column; align-items: flex-start; gap: var(--cds-gap-sm); margin-top: var(--cds-gap-md); color: var(--color-fg-muted); }
+.pf-mkt { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--cds-gap-sm); width: 100%; max-width: 760px; }
+.pf-mk { border: 1px solid var(--color-border-line); background: var(--color-panel); padding: 8px 10px; min-width: 0; }
+.pf-mk-n { font-size: 0.72rem; font-variant: small-caps; letter-spacing: 0.06em; color: var(--color-fg-muted); }
+.pf-mk-v { font-family: var(--pf-display, Georgia, serif); font-size: 1.35rem; color: var(--color-fg); font-variant-numeric: tabular-nums; line-height: 1.25; }
+.pf-mk-s { font-size: 0.75rem; color: var(--color-fg-muted); }
+.pf-tiles { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; }
+@media (max-width: 520px) { .pf .pf-big { font-size: 1.55rem; } .pf-tile, .pf-card { padding: 12px !important; } }
 .pf-marche b { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); font-variant-numeric: tabular-nums; }
 .pf-chip { display: inline-block; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); padding: 2px 10px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
 .pf-chip-ok { color: var(--color-ok); }
@@ -239,7 +248,7 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
       <p class="pf-lede" data-read lang="fr"><span data-draw="phrase">—</span></p>
       <div class="pf-marche" id="marche">
         <span data-draw="marche-chip" data-source="marche_gs"></span>
-        <span data-read lang="fr" data-draw="marche-phrase">—</span>
+        <div class="pf-mkt" data-draw="marche-phrase" aria-label="Marchés"></div>
       </div>
     </div>
     <div class="pf-cur" role="group" aria-label="Devise d'affichage">
@@ -811,21 +820,29 @@ dash.draw('marche-phrase', (el) => {
   const k = window.pfMarche();
   if (!k) { el.textContent = '—'; return; }
   const F = window.pfFmt;
-  const b = (txt, r, field) => { const s = F.span(txt, 'marche_gs', field, 'ticker=' + encodeURIComponent(r.ticker)); const x = document.createElement('b'); x.append(s); return x; };
-  const pct = (v) => F.pct(v);
-  const desc = (r) => r.ecart > -2 ? 'tout près de son plus haut' : r.ecart > -5 ? 'un peu sous son plus haut' : r.ecart > -10 ? 'en recul' : r.ecart > -20 ? 'en correction' : 'en forte baisse';
-  const parts = [];
-  const add = (r, name) => { if (!r || r.ecart == null) return; parts.push(document.createTextNode(name + ' ' + desc(r) + ' (')); parts.push(b(pct(r.ecart), r, 'ecart')); parts.push(document.createTextNode(' depuis son plus haut sur 1 an, ')); parts.push(b(pct(r.jour), r, 'jour')); parts.push(document.createTextNode(" aujourd'hui). ")); };
-  add(k.sp, 'Bourse américaine (S&P 500) :');
-  add(k.nd, 'Tech américaine (Nasdaq 100) :');
-  add(k.smi, 'Bourse suisse (SMI) :');
+  const sp = (txt, r, field, cls) => F.span(txt, 'marche_gs', field, 'ticker=' + encodeURIComponent(r.ticker), cls);
+  const desc = (r) => r.ecart > -2 ? 'au plus haut' : r.ecart > -5 ? 'léger recul' : r.ecart > -10 ? 'en recul' : r.ecart > -20 ? 'en correction' : 'forte baisse';
+  const cards = [];
+  const card = (r, name) => {
+    if (!r || r.ecart == null) return;
+    const c = document.createElement('div'); c.className = 'pf-mk';
+    const n = document.createElement('div'); n.className = 'pf-mk-n'; n.textContent = name;
+    const v = document.createElement('div'); v.className = 'pf-mk-v'; v.append(sp(F.pct(r.ecart), r, 'ecart', r.ecart <= -10 ? 'pf-down' : r.ecart <= -5 ? '' : 'pf-up'));
+    const s = document.createElement('div'); s.className = 'pf-mk-s'; s.append(document.createTextNode(desc(r) + ' · auj. '), sp(F.pct(r.jour), r, 'jour', r.jour >= 0 ? 'pf-up' : 'pf-down'));
+    c.append(n, v, s); cards.push(c);
+  };
+  card(k.sp, 'Bourse US (S&P 500)');
+  card(k.nd, 'Tech US (Nasdaq)');
+  card(k.smi, 'Bourse suisse (SMI)');
   if (k.vix && k.vix.niveau != null) {
-    const v = k.vix.niveau;
-    parts.push(document.createTextNode('Indice de la peur (VIX) : '));
-    parts.push(b(new Intl.NumberFormat('fr-CH', {maximumFractionDigits: 1}).format(v), k.vix, 'niveau'));
-    parts.push(document.createTextNode(v < 15 ? ', les investisseurs sont sereins.' : v < 20 ? ', nervosité normale.' : v < 30 ? ', les investisseurs sont nerveux.' : ', les investisseurs ont peur.'));
+    const r = k.vix, v0 = r.niveau;
+    const c = document.createElement('div'); c.className = 'pf-mk';
+    const n = document.createElement('div'); n.className = 'pf-mk-n'; n.textContent = 'Indice de la peur (VIX)';
+    const v = document.createElement('div'); v.className = 'pf-mk-v'; v.append(sp(new Intl.NumberFormat('fr-CH', {maximumFractionDigits: 1}).format(v0), r, 'niveau', v0 >= 30 ? 'pf-down' : v0 >= 20 ? '' : 'pf-up'));
+    const s = document.createElement('div'); s.className = 'pf-mk-s'; s.textContent = v0 < 15 ? 'investisseurs sereins' : v0 < 20 ? 'nervosité normale' : v0 < 30 ? 'investisseurs nerveux' : 'investisseurs inquiets';
+    c.append(n, v, s); cards.push(c);
   }
-  el.replaceChildren(...parts);
+  el.replaceChildren(...cards);
 });
 
 dash.draw('t-date', (el) => {

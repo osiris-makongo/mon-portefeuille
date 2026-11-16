@@ -6,7 +6,7 @@
 <title>John Rockefeller</title>
 <meta name="theme-color" content="#000000">
 <meta name="color-scheme" content="only dark">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dseg@0.46.0/css/dseg.min.css">
+<link rel="preload" href="DSEG14Classic-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="pop-smoke-portrait-32.png">
 <link rel="apple-touch-icon" sizes="192x192" href="pop-smoke-portrait-192.png">
@@ -14,6 +14,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="robots" content="noindex">
 <style>
+@font-face {
+  font-family: "DSEG14 Classic";
+  src: url("DSEG14Classic-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
 :root {
   color-scheme: only dark;
   --pf-paper: #000000;
@@ -46,19 +52,14 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, 0.18) 45%, #000 96%), url("espace-pc.jpg") center / cover no-repeat;
-  filter: grayscale(1) contrast(1.24) brightness(0.91);
+  background: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, 0.18) 45%, #000 96%), url("horizon-neon-pc.jpg") center / cover no-repeat;
   transform-origin: 86% 20%;
 }
 @media (max-width: 700px) {
   body::before {
-    background-image: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, 0.26) 44%, #000 96%), url("espace-mobile.jpg");
+    background-image: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, 0.26) 44%, #000 96%), url("horizon-neon-mobile.jpg");
     transform-origin: 50% 17%;
   }
-}
-@media (prefers-reduced-motion: no-preference) {
-  body::before { animation: space-flight 26s ease-in-out infinite alternate; }
-  @keyframes space-flight { from { transform: scale(1); } to { transform: scale(1.12); } }
 }
 body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
 [hidden] { display: none !important; }
@@ -66,7 +67,7 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 @keyframes pfpulse { 50% { opacity: .55; } }
 .dash-select { font: inherit; font-size: 0.95rem; padding: 6px 28px 6px 10px; border: 1px solid var(--pf-border); border-radius: 0; background-color: var(--pf-paper); color: var(--pf-ink); }
 .pf-app-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; justify-content: flex-end; }
-#pf-setup { max-width: 520px; margin: 32px auto; padding: 24px; font-family: Georgia, serif; color: var(--pf-ink); background: var(--pf-paper-2); border: 1px solid var(--pf-border-soft); border-radius: 14px; }
+#pf-setup { max-width: 520px; margin: 32px auto; padding: 24px; font-family: "DSEG14 Classic", monospace; color: var(--pf-ink); background: var(--pf-paper-2); border: 1px solid var(--pf-border-soft); border-radius: 14px; }
 #pf-setup h1 { margin-top: 0; color: var(--pf-accent-warm); }
 #pf-setup button { color: var(--pf-on-accent); background: var(--pf-accent-cool); border: 1px solid var(--pf-accent-cool); }
 @media (max-width: 600px) { #pf-setup { margin: 16px; } }
@@ -336,19 +337,6 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
   .pf .pf-app-bar { justify-content: flex-start; }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .pf-flight-summary {
-    transform: translate3d(var(--flight-x, 0px), var(--flight-y, 0px), 0) scale(var(--flight-scale, 1));
-    opacity: var(--flight-opacity, 1);
-    filter: blur(var(--flight-blur, 0px));
-  }
-  .pf-flight-pending:not(:focus-within) { opacity: 0.12; transform: translateY(18px); }
-  .pf-flight-arrival:not(:focus-within) { animation: flight-arrival 780ms cubic-bezier(.16, 1, .3, 1) both; }
-  @keyframes flight-arrival {
-    from { opacity: 0.12; transform: translateY(28px); filter: blur(3px); }
-    to { opacity: 1; transform: translateY(0); filter: blur(0); }
-  }
-}
 
 .pf { --pf-display: "DSEG14 Classic", "IBM Plex Mono", monospace; }
 .pf .pf-section { display: grid; gap: clamp(22px, 4vw, 38px); min-width: 0; }
@@ -397,12 +385,91 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 @media (max-width: 520px) {
   .pf .pf-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
 }
+
+body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
+.pf {
+  width: 100%;
+  padding: 0;
+  gap: 0;
+  font-family: var(--pf-display) !important;
+}
+.pf-deck {
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+}
+.pf-deck::-webkit-scrollbar { display: none; }
+.pf-screen {
+  height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.pf-screen-content {
+  overflow-y: auto;
+  width: min(100%, 1040px);
+  box-sizing: border-box;
+  margin-inline: auto;
+  padding: clamp(20px, 5vh, 54px) max(18px, env(safe-area-inset-right)) calc(74px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  background: linear-gradient(90deg, transparent, #0009 17%, #0009 83%, transparent);
+  scrollbar-width: thin;
+}
+.pf #ecran-marche .pf-head { padding: clamp(100px, 23vh, 220px) 0 0; }
+.pf #ecran-marche .pf-headtext { max-width: 650px; }
+.pf .pf-market-copy { display: grid; gap: 16px; font-size: clamp(16px, 2.4vw, 22px); line-height: 1.5; text-shadow: 0 0 12px #ffffff50, 0 0 4px #000; }
+.pf .pf-market-copy .pf-lede { font-size: inherit; }
+.pf .pf-market-copy .pf-chip { color: #fff; font-size: clamp(22px, 5vw, 38px); white-space: normal; text-shadow: 0 0 16px #ffffff88; }
+.pf .pf-market-copy .pf-marche { grid-row: 1; }
+.pf .pf-market-copy .pf-mkt { margin-top: 12px; }
+.pf .pf-screen-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
+.pf .pf-screen-controls .pf-app-bar { width: auto; justify-content: flex-start; }
+.pf .pf-tabs { margin-block: 8px 20px; }
+.pf .pf-screen-nav {
+  position: fixed;
+  z-index: 3;
+  inset: auto 0 0;
+  padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  display: flex;
+  justify-content: center;
+  gap: clamp(4px, 4vw, 32px);
+  background: linear-gradient(transparent, #000 42%);
+}
+.pf .pf-screen-nav button {
+  font: inherit;
+  min-height: 44px;
+  background: transparent;
+  border: 0;
+  color: #bbb;
+  padding-inline: clamp(4px, 2vw, 16px);
+  cursor: pointer;
+}
+.pf .pf-screen-nav [aria-current] { color: #fff; text-shadow: 0 0 12px #fff; text-decoration: underline; text-underline-offset: 5px; }
+.pf .pf-table td { line-height: 1.42; }
+.pf .pf-notes { margin-block: 28px 0; }
+.pf .pf-big { font-size: clamp(18px, 3vw, 30px) !important; }
+@media (prefers-reduced-motion: no-preference) {
+  .pf-screen.pf-writing :is(.pf-chip, .pf-lede, .pf-mkt, .pf-section-title, .pf-tile, .pf-table tr, .pf-h2) {
+    animation: pf-write 240ms steps(20, end) both;
+  }
+  .pf-screen.pf-writing :is(.pf-mkt, .pf-tile:nth-child(even), .pf-table tr:nth-child(even)) { animation-delay: 55ms; }
+  @keyframes pf-write {
+    from { clip-path: inset(-10px 100% -10px -10px); }
+    to { clip-path: inset(-10px -10px -10px -10px); }
+  }
+}
 </style>
 
 <div class="pf">
+  <main class="pf-deck" aria-label="Tableau de bord">
+    <section class="pf-screen" id="ecran-marche" aria-label="Marché">
+      <div class="pf-screen-content" tabindex="0" aria-label="Marché">
   <header class="pf-head" id="entete">
     <div class="pf-headtext">
-      <div class="pf-flight-summary">
+      <div class="pf-market-copy">
         <p class="pf-lede" data-read lang="fr"><span data-draw="phrase">—</span></p>
         <div class="pf-marche" id="marche">
           <span data-draw="marche-chip" data-source="marche_gs"></span>
@@ -410,6 +477,12 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
         </div>
       </div>
     </div>
+  </header>
+      </div>
+    </section>
+    <section class="pf-screen" id="ecran-portefeuille" aria-label="Mon portefeuille et Prévision">
+      <div class="pf-screen-content" tabindex="0" aria-label="Mon portefeuille et Prévision">
+      <div class="pf-screen-controls">
     <div class="pf-cur" role="group" aria-label="Devise d'affichage">
       <button type="button" class="pf-cur-btn" data-cur="CHF" aria-pressed="true">Fr</button>
       <button type="button" class="pf-cur-btn" data-cur="EUR" aria-pressed="false">€</button>
@@ -419,11 +492,10 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
       <button type="button" class="pf-back" id="pf-refresh">↻ Actualiser</button>
       <span class="pf-sub" id="pf-maj"></span>
     </div>
-  </header>
-
+      </div>
   <nav class="pf-tabs" role="tablist" aria-label="Vues">
     <button type="button" class="pf-tab" role="tab" data-tab="vue" aria-selected="true">Mon portefeuille</button>
-    <button type="button" class="pf-tab" role="tab" data-tab="projection" aria-selected="false">Projection</button>
+    <button type="button" class="pf-tab" role="tab" data-tab="projection" aria-selected="false">Prévision</button>
   </nav>
 
   <div class="pf-panel" id="vue" role="tabpanel">
@@ -472,11 +544,7 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
   </div>
   </section>
 
-  <section class="pf-section" id="actions" aria-labelledby="titre-actions">
-    <h2 class="pf-section-title" id="titre-actions">Mes actions</h2>
-    <div class="pf-sub">Clique sur une ligne pour voir la courbe de cette action seule.</div>
-    <div class="pf-tablewrap" data-draw="table"></div>
-  </section>
+
   </div>
 
   <div class="pf-panel" id="projection" role="tabpanel" hidden>
@@ -508,6 +576,16 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
     </section>
   </div>
 
+
+      </div>
+    </section>
+    <section class="pf-screen" id="ecran-actions" aria-label="Mes actions">
+      <div class="pf-screen-content" tabindex="0" aria-label="Mes actions">
+  <section class="pf-section" id="actions" aria-labelledby="titre-actions">
+    <h2 class="pf-section-title" id="titre-actions">Mes actions</h2>
+    <div class="pf-sub">Clique sur une ligne pour voir la courbe de cette action seule.</div>
+    <div class="pf-tablewrap" data-draw="table"></div>
+  </section>
   <details class="pf-notes" id="notes">
     <summary>Comment c'est calculé</summary>
     <ul>
@@ -521,6 +599,14 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
       <li>Un nouvel achat s'ajoute dans l'onglet Achats du tableau (et dans Mes actions si c'est une nouvelle action) : la page le reprend toute seule.</li>
     </ul>
   </details>
+      </div>
+    </section>
+  </main>
+  <nav class="pf-screen-nav" aria-label="Écrans du portefeuille">
+    <button type="button" data-screen="0" aria-current="step">Marché</button>
+    <button type="button" data-screen="1">Portefeuille</button>
+    <button type="button" data-screen="2">Actions</button>
+  </nav>
 </div>
 
 <script>
@@ -888,6 +974,7 @@ document.querySelectorAll('#retour').forEach((b) => {
 window.pfSelect = function (sym) {
   window.pfState.sel = sym;
   window.pfState.proj = sym || 'TOTAL';
+  if (sym) window.pfShowTab('vue');
   document.querySelectorAll('#retour').forEach((b) => { b.hidden = !sym; });
   window.pfRedraw();
   const c = document.getElementById('courbe');
@@ -1358,52 +1445,36 @@ dash.draw('proj-chart', (el) => {
 document.querySelectorAll('#pf-refresh').forEach((b) => b.addEventListener('click', () => window.pfLoad()));
 window.pfLoad();
 (() => {
-  const origin = document.querySelector('.pf-headtext');
-  const summary = origin.querySelector('.pf-flight-summary');
+  const deck = document.querySelector('.pf-deck');
+  const screens = [...deck.querySelectorAll('.pf-screen')];
+  const buttons = [...document.querySelectorAll('[data-screen]')];
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const mobile = matchMedia('(max-width: 700px)');
+  let current = -1;
   let frame = 0;
 
-  function moveSummary() {
+  function showCurrentScreen() {
     frame = 0;
-    if (reducedMotion.matches || !origin.getClientRects().length) return;
-    const bounds = origin.getBoundingClientRect();
-    const progress = Math.max(0, Math.min(1, (scrollY - 12) / (mobile.matches ? 250 : 300)));
-    const pull = progress ** 1.45;
-    const targetX = innerWidth * (mobile.matches ? 0.5 : 0.86);
-    const targetY = innerHeight * (mobile.matches ? 0.17 : 0.20);
-    summary.style.setProperty('--flight-x', ((targetX - bounds.left - bounds.width / 2) * pull) + 'px');
-    summary.style.setProperty('--flight-y', ((targetY - bounds.top - bounds.height / 2) * pull) + 'px');
-    summary.style.setProperty('--flight-scale', 1 - 0.93 * pull);
-    summary.style.setProperty('--flight-opacity', 1 - progress ** 1.25);
-    summary.style.setProperty('--flight-blur', (pull * 6) + 'px');
+    if (!deck.clientHeight) return;
+    const index = Math.min(screens.length - 1, Math.max(0, Math.round(deck.scrollTop / deck.clientHeight)));
+    if (index === current) return;
+    current = index;
+    screens.forEach((screen, i) => screen.classList.toggle('pf-writing', i === index));
+    buttons.forEach((button, i) => {
+      if (i === index) button.setAttribute('aria-current', 'step');
+      else button.removeAttribute('aria-current');
+    });
   }
 
-  function requestFrame() {
-    if (!frame) frame = requestAnimationFrame(moveSummary);
+  function update() {
+    if (!frame) frame = requestAnimationFrame(showCurrentScreen);
   }
 
-  addEventListener('scroll', requestFrame, { passive: true });
-  addEventListener('resize', requestFrame);
-  reducedMotion.addEventListener('change', requestFrame);
-  requestFrame();
-
-  if (!('IntersectionObserver' in window)) return;
-  const observer = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (!entry.isIntersecting) continue;
-      observer.unobserve(entry.target);
-      if (!entry.target.classList.contains('pf-flight-pending')) continue;
-      entry.target.classList.remove('pf-flight-pending');
-      if (!reducedMotion.matches) entry.target.classList.add('pf-flight-arrival');
-    }
-  }, { rootMargin: '0px 0px -8% 0px' });
-  document.querySelectorAll('#portefeuille, #actions, #proj-resultat').forEach((section) => {
-    if (!reducedMotion.matches && (!section.getClientRects().length || section.getBoundingClientRect().top >= innerHeight * 0.88)) {
-      section.classList.add('pf-flight-pending');
-    }
-    observer.observe(section);
-  });
+  buttons.forEach((button, i) => button.addEventListener('click', () => {
+    screens[i].scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+  }));
+  deck.addEventListener('scroll', update, { passive: true });
+  new ResizeObserver(update).observe(deck);
+  update();
 })();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>

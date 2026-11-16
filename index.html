@@ -4,37 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>John Rockefeller</title>
-<meta name="theme-color" content="#581b29" id="pf-theme-color">
-<meta name="color-scheme" content="light dark">
-<script>
-(() => {
-  const system = matchMedia('(prefers-color-scheme: dark)');
-  const color = document.getElementById('pf-theme-color');
-  let preference = 'auto';
-  try {
-    const stored = localStorage.getItem('pf-theme');
-    if (stored === 'light' || stored === 'dark') preference = stored;
-  } catch (error) {}
-
-  function applyTheme() {
-    const dark = preference === 'dark' || (preference === 'auto' && system.matches);
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    color.content = dark ? '#321923' : '#581b29';
-  }
-
-  applyTheme();
-  system.addEventListener('change', applyTheme);
-  document.addEventListener('DOMContentLoaded', () => {
-    const select = document.getElementById('pf-theme');
-    select.value = preference;
-    select.addEventListener('change', () => {
-      preference = select.value;
-      try { localStorage.setItem('pf-theme', preference); } catch (error) {}
-      applyTheme();
-    });
-  });
-})();
-</script>
+<meta name="theme-color" content="#080b18">
+<meta name="color-scheme" content="only dark">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192-v2.png">
 <link rel="apple-touch-icon" href="apple-touch-icon-v2.png">
@@ -43,39 +14,21 @@
 <meta name="robots" content="noindex">
 <style>
 :root {
-  color-scheme: light dark;
-  --pf-paper: #fbf1da;
-  --pf-paper-2: #fff8e8;
-  --pf-ink: #302019;
-  --pf-ink-2: #5e483a;
-  --pf-green: #164639;
-  --pf-oxblood: #581b29;
-  --pf-on-accent: #fff8e8;
-  --pf-brass: #976d33;
-  --pf-brass-soft: rgba(154, 122, 53, 0.45);
-  --pf-brass-faint: rgba(154, 122, 53, 0.16);
-  --pf-positive: #2f6b3a;
-  --pf-negative: #9a2d20;
-  --pf-warning: #80551d;
-  --pf-grid: rgba(42, 33, 24, 0.10);
-}
-:root[data-theme="light"] { color-scheme: only light; }
-:root[data-theme="dark"] {
   color-scheme: only dark;
-  --pf-paper: #21181b;
-  --pf-paper-2: #302327;
-  --pf-ink: #f8e9ce;
-  --pf-ink-2: #dbc3a5;
-  --pf-green: #9cd7ba;
-  --pf-oxblood: #f0aeb9;
-  --pf-on-accent: #28191d;
-  --pf-brass: #c39a61;
-  --pf-brass-soft: rgba(195, 154, 97, 0.52);
-  --pf-brass-faint: rgba(195, 154, 97, 0.17);
-  --pf-positive: #a0d8ac;
-  --pf-negative: #ffb1ab;
-  --pf-warning: #f1cd83;
-  --pf-grid: rgba(248, 233, 206, 0.17);
+  --pf-paper: #080b18;
+  --pf-paper-2: #13182b;
+  --pf-ink: #f2efff;
+  --pf-ink-2: #c3c6db;
+  --pf-accent-cool: #b9b4ff;
+  --pf-accent-warm: #ffc485;
+  --pf-on-accent: #171326;
+  --pf-border: #8078b3;
+  --pf-border-soft: rgba(166, 153, 228, 0.36);
+  --pf-border-faint: rgba(166, 153, 228, 0.14);
+  --pf-positive: #9ce6c0;
+  --pf-negative: #ffb1bc;
+  --pf-warning: #ffd095;
+  --pf-grid: rgba(195, 198, 219, 0.18);
 }
 :root {
   --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 14px; --cds-gap-lg: 22px; --cds-gap-xl: 32px;
@@ -84,16 +37,36 @@
   --cds-font-weight-medium: 600; --font-anthropic-serif: Georgia, serif; --font-anthropic-sans: system-ui, sans-serif;
   --cds-dur-slow: 400ms; --cds-ease-out: cubic-bezier(.2,.7,.2,1);
 }
-html, body { margin: 0; min-height: 100%; background: var(--pf-paper); color: var(--pf-ink); }
+html { background: var(--pf-paper); overflow-x: clip; }
+body { margin: 0; min-height: 100vh; color: var(--pf-ink); isolation: isolate; }
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 10%, rgba(8, 11, 24, 0.26) 50%, rgba(8, 11, 24, 0.76)), url("espace-pc.jpg") center / cover no-repeat;
+  transform-origin: 86% 20%;
+}
+@media (max-width: 700px) {
+  body::before {
+    background-image: linear-gradient(180deg, transparent 5%, rgba(8, 11, 24, 0.36) 45%, rgba(8, 11, 24, 0.7)), url("espace-mobile.jpg");
+    transform-origin: 50% 17%;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  body::before { animation: space-flight 26s ease-in-out infinite alternate; }
+  @keyframes space-flight { from { transform: scale(1); } to { transform: scale(1.12); } }
+}
 body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
 [hidden] { display: none !important; }
-.dash-skeleton { background: var(--pf-brass-faint); border-radius: 2px; animation: pfpulse 1.4s ease-in-out infinite; color: transparent !important; }
+.dash-skeleton { background: var(--pf-border-faint); border-radius: 2px; animation: pfpulse 1.4s ease-in-out infinite; color: transparent !important; }
 @keyframes pfpulse { 50% { opacity: .55; } }
-.dash-select { font: inherit; font-size: 0.95rem; padding: 6px 28px 6px 10px; border: 1px solid var(--pf-brass); border-radius: 0; background-color: var(--pf-paper); color: var(--pf-ink); }
+.dash-select { font: inherit; font-size: 0.95rem; padding: 6px 28px 6px 10px; border: 1px solid var(--pf-border); border-radius: 0; background-color: var(--pf-paper); color: var(--pf-ink); }
 .pf-app-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; justify-content: flex-end; }
-#pf-setup { max-width: 520px; margin: 32px auto; padding: 24px; font-family: Georgia, serif; color: var(--pf-ink); background: var(--pf-paper-2); border: 5px double var(--pf-brass); }
-#pf-setup h1 { margin-top: 0; color: var(--pf-oxblood); }
-#pf-setup button { color: var(--pf-on-accent); background: var(--pf-green); border: 1px solid var(--pf-green); }
+#pf-setup { max-width: 520px; margin: 32px auto; padding: 24px; font-family: Georgia, serif; color: var(--pf-ink); background: var(--pf-paper-2); border: 1px solid var(--pf-border-soft); border-radius: 14px; }
+#pf-setup h1 { margin-top: 0; color: var(--pf-accent-warm); }
+#pf-setup button { color: var(--pf-on-accent); background: var(--pf-accent-cool); border: 1px solid var(--pf-accent-cool); }
 @media (max-width: 600px) { #pf-setup { margin: 16px; } }
 #pf-setup form { display: grid; gap: 10px; }
 #pf-setup input, #pf-setup button { font: inherit; padding: 8px; }
@@ -213,43 +186,42 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 </div>
 <div id="dash-root" hidden>
 <style>
-/* Palette et motifs inspirés du tapis de référence. */
+/* Couleurs des cartes, des commandes et des graphiques. */
 #dash-root { --dash-gutter: 0; }
 .pf {
-  --pf-display: 'Baskerville', 'Baskerville Old Face', 'Hoefler Text', 'Libre Baskerville', Garamond, Georgia, 'Times New Roman', serif;
-  --pf-text: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --pf-display: 'Instrument Sans', system-ui, sans-serif;
+  --pf-text: 'Instrument Sans', system-ui, sans-serif;
   --color-bg: var(--pf-paper); --color-panel: var(--pf-paper-2); --color-fg: var(--pf-ink); --color-fg-muted: var(--pf-ink-2);
-  --color-border-line: var(--pf-brass-soft); --color-ok: var(--pf-positive); --color-bad: var(--pf-negative); --color-warn: var(--pf-warning);
-  --cds-text-secondary: var(--pf-ink-2); --cds-chart-grid: var(--pf-grid); --cds-chart-axis: var(--pf-brass-soft);
-  --cds-chart-reference: var(--pf-brass-soft); --cds-chart-muted: var(--pf-ink-2);
-  --cds-surface-popover: var(--pf-paper-2); --cds-border: var(--pf-brass); --cds-shadow-popover: 0 6px 18px rgba(42, 33, 24, 0.25);
-  --pf-accent: var(--pf-green);
+  --color-border-line: var(--pf-border-soft); --color-ok: var(--pf-positive); --color-bad: var(--pf-negative); --color-warn: var(--pf-warning);
+  --cds-text-secondary: var(--pf-ink-2); --cds-chart-grid: var(--pf-grid); --cds-chart-axis: var(--pf-border-soft);
+  --cds-chart-reference: var(--pf-border-soft); --cds-chart-muted: var(--pf-ink-2);
+  --cds-surface-popover: var(--pf-paper-2); --cds-border: var(--pf-border); --cds-shadow-popover: 0 6px 18px rgba(42, 33, 24, 0.25);
+  --pf-accent: var(--pf-accent-cool);
   font-family: var(--pf-text) !important;
-  background-color: var(--pf-paper);
   box-sizing: border-box;
   width: min(100%, 1180px);
   margin-inline: auto;
   padding: 0 max(14px, env(safe-area-inset-right)) 36px max(14px, env(safe-area-inset-left));
-  border-inline: 5px double var(--pf-brass);
+
 }
-.pf .pf-title { font-family: var(--pf-display) !important; font-variant: small-caps; letter-spacing: 0.12em; font-size: clamp(1.7rem, 4.6vw, 2.6rem) !important; color: var(--pf-green); font-weight: 400 !important; }
+.pf .pf-title { font-family: var(--pf-display) !important; font-variant: normal; letter-spacing: 0.02em; font-size: clamp(1.7rem, 4.6vw, 2.6rem) !important; color: var(--pf-accent-cool); font-weight: 400 !important; }
 .pf .pf-h2, .pf .pf-lab, .pf .pf-tab, .pf .pf-per-lab, .pf .pf-table th, .pf .pf-chip, .pf .pf-field { font-family: var(--pf-display); font-variant: small-caps; letter-spacing: 0.08em; }
-.pf .pf-h2 { color: var(--pf-green); font-weight: 400; font-size: 1.15rem; }
-.pf .pf-lab { color: var(--pf-oxblood); font-size: 0.85rem; }
+.pf .pf-h2 { color: var(--pf-accent-cool); font-weight: 400; font-size: 1.15rem; }
+.pf .pf-lab { color: var(--pf-accent-warm); font-size: 0.85rem; }
 .pf .pf-big { font-family: var(--pf-display) !important; color: var(--pf-ink); }
-.pf .pf-tile, .pf .pf-card { background: var(--pf-paper-2); border: 1px solid var(--pf-brass); border-radius: 0;
-  box-shadow: inset 0 0 0 3px var(--pf-paper-2), inset 0 0 0 4px var(--pf-brass-soft), 0 1px 0 rgba(42, 33, 24, 0.08); }
-.pf .pf-tile { border-top: 3px double var(--pf-green); }
-.pf .pf-cur, .pf .pf-per-btns { border-color: var(--pf-brass); border-radius: 0; }
+.pf .pf-tile, .pf .pf-card { background: var(--pf-paper-2); border: 1px solid var(--pf-border); border-radius: 0;
+  box-shadow: inset 0 0 0 3px var(--pf-paper-2), inset 0 0 0 4px var(--pf-border-soft), 0 1px 0 rgba(42, 33, 24, 0.08); }
+.pf .pf-tile { border-top: 3px double var(--pf-accent-cool); }
+.pf .pf-cur, .pf .pf-per-btns { border-color: var(--pf-border); border-radius: 0; }
 .pf .pf-cur-btn, .pf .pf-per-btn { font-family: var(--pf-display); }
-.pf .pf-cur-btn[aria-pressed="true"], .pf .pf-per-btn[aria-pressed="true"] { background: var(--pf-green); color: var(--pf-on-accent); }
-.pf .pf-tab[aria-selected="true"] { color: var(--pf-oxblood); border-bottom-color: var(--pf-oxblood); }
-.pf .pf-tabs { border-bottom: 3px double var(--pf-brass-soft); }
-.pf .pf-table th { color: var(--pf-green); font-size: 0.85rem; font-weight: 400; border-bottom: 3px double var(--pf-brass); }
-.pf .pf-table td { border-bottom-color: var(--pf-brass-faint); }
-.pf .pf-row:hover td, .pf .pf-row.is-sel td { background: var(--pf-brass-faint); }
-.pf .pf-back, .pf .pf-input, .pf .dash-select { border-color: var(--pf-brass); border-radius: 0; background-color: var(--pf-paper); color: var(--pf-ink); }
-.pf .pf-notes summary { color: var(--pf-green); font-variant: small-caps; }
+.pf .pf-cur-btn[aria-pressed="true"], .pf .pf-per-btn[aria-pressed="true"] { background: var(--pf-accent-cool); color: var(--pf-on-accent); }
+.pf .pf-tab[aria-selected="true"] { color: var(--pf-accent-warm); border-bottom-color: var(--pf-accent-warm); }
+.pf .pf-tabs { border-bottom: 3px double var(--pf-border-soft); }
+.pf .pf-table th { color: var(--pf-accent-cool); font-size: 0.85rem; font-weight: 400; border-bottom: 3px double var(--pf-border); }
+.pf .pf-table td { border-bottom-color: var(--pf-border-faint); }
+.pf .pf-row:hover td, .pf .pf-row.is-sel td { background: var(--pf-border-faint); }
+.pf .pf-back, .pf .pf-input, .pf .dash-select { border-color: var(--pf-border); border-radius: 0; background-color: var(--pf-paper); color: var(--pf-ink); }
+.pf .pf-notes summary { color: var(--pf-accent-cool); font-variant: small-caps; }
 .pf .pf-tip { border-radius: 0; font-family: var(--pf-text); }
 .pf .pf-chart text { font-family: var(--pf-text); }
 .pf { display: flex; flex-direction: column; gap: var(--cds-gap-lg); font-family: var(--font-anthropic-sans); color: var(--color-fg); }
@@ -328,25 +300,28 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 .pf-notes summary { cursor: pointer; color: var(--color-fg); }
 .pf-notes ul { margin: var(--cds-gap-sm) 0 0; padding-left: 1.2em; line-height: 1.6; }
 
-.pf .pf-head { align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--pf-brass); }
+.pf .pf-head { align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--pf-border); }
 .pf .pf-headtext { flex-basis: 100%; }
-.pf .pf-headtext::before {
-  content: "";
-  display: block;
-  height: clamp(56px, 15vw, 132px);
-  margin-bottom: 20px;
-  border-block: 4px double var(--pf-brass);
-  background: var(--pf-oxblood) url("motif-portefeuille.jpg") center 50% / cover no-repeat;
+.pf .pf-headtext { max-width: 720px; }
+.pf .pf-head { padding-top: clamp(54px, 11vh, 132px); }
+.pf .pf-headtext :is(.pf-lede, .pf-title) { text-shadow: 0 2px 12px #080b18; }
+.pf .pf-tile, .pf .pf-card {
+  border: 1px solid var(--pf-border-soft);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
 }
-.pf .pf-title { color: var(--pf-oxblood); letter-spacing: 0.075em; overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .pf .pf-head { padding-top: clamp(105px, 22vh, 190px); }
+}
+.pf .pf-title { color: var(--pf-accent-warm); letter-spacing: 0.015em; overflow-wrap: anywhere; }
 .pf .pf-lede { color: var(--pf-ink-2); }
 .pf .pf-tabs { gap: 4px; }
 .pf .pf-tab { padding: 10px clamp(8px, 3vw, 18px); }
-.pf .pf-tab[aria-selected="true"] { background-color: var(--pf-oxblood); color: var(--pf-on-accent); }
-.pf .pf-tile { border-top-color: var(--pf-oxblood); }
+.pf .pf-tab[aria-selected="true"] { background-color: var(--pf-accent-warm); color: var(--pf-on-accent); }
+.pf .pf-tile { border-top-color: var(--pf-accent-cool); }
 .pf .pf-card { min-width: 0; }
 .pf .pf-tablewrap { max-width: 100%; }
-.pf :focus-visible, #pf-setup :focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
+.pf :focus-visible, #pf-setup :focus-visible { outline: 2px solid var(--pf-accent-cool); outline-offset: 2px; }
 @media (max-width: 520px) {
   .pf .pf-tiles { grid-template-columns: minmax(0, 1fr); }
   .pf .pf-tabs { flex-wrap: wrap; }
@@ -370,12 +345,6 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
       <button type="button" class="pf-cur-btn" data-cur="USD" aria-pressed="false">$</button>
     </div>
     <div class="pf-app-bar">
-      <label for="pf-theme" class="pf-sub">Thème</label>
-      <select id="pf-theme" class="dash-select">
-        <option value="auto">Automatique</option>
-        <option value="light">Clair</option>
-        <option value="dark">Sombre</option>
-      </select>
       <button type="button" class="pf-back" id="pf-refresh">↻ Actualiser</button>
       <span class="pf-sub" id="pf-maj"></span>
     </div>

@@ -1,5 +1,5 @@
-const CACHE = 'pf-v7';
-const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'pop-smoke-espace-32.png', 'pop-smoke-espace-192.png', 'pop-smoke-espace-512.png', 'https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js'];
+const CACHE = 'pf-v8';
+const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'pop-smoke-diamants-32.png', 'pop-smoke-diamants-192.png', 'pop-smoke-diamants-512.png', 'https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js'];
 
 self.addEventListener('install', (event) => {
   const requests = SHELL.map((url) => new Request(url, { cache: 'reload' }));

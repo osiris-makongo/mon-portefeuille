@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>John Rockefeller</title>
-<meta name="theme-color" content="#080b18">
+<meta name="theme-color" content="#000000">
 <meta name="color-scheme" content="only dark">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="pop-smoke-portrait-32.png">
@@ -15,19 +15,19 @@
 <style>
 :root {
   color-scheme: only dark;
-  --pf-paper: #080b18;
-  --pf-paper-2: #13182b;
-  --pf-ink: #f2efff;
-  --pf-ink-2: #c3c6db;
-  --pf-accent-cool: #b9b4ff;
-  --pf-accent-warm: #ffc485;
-  --pf-on-accent: #171326;
-  --pf-border: #8078b3;
-  --pf-border-soft: rgba(166, 153, 228, 0.36);
-  --pf-border-faint: rgba(166, 153, 228, 0.14);
-  --pf-positive: #9ce6c0;
-  --pf-negative: #ffb1bc;
-  --pf-warning: #ffd095;
+  --pf-paper: #000000;
+  --pf-paper-2: #0b0b13;
+  --pf-ink: #f4f1ff;
+  --pf-ink-2: #c9c2ec;
+  --pf-accent-cool: #66f7ff;
+  --pf-accent-warm: #ef9aff;
+  --pf-on-accent: #100719;
+  --pf-border: #a282ef;
+  --pf-border-soft: rgba(155, 102, 245, 0.36);
+  --pf-border-faint: rgba(155, 102, 245, 0.14);
+  --pf-positive: #8affc6;
+  --pf-negative: #ff9fc6;
+  --pf-warning: #ffe394;
   --pf-grid: rgba(195, 198, 219, 0.18);
 }
 :root {
@@ -45,12 +45,13 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(180deg, transparent 10%, rgba(8, 11, 24, 0.26) 50%, rgba(8, 11, 24, 0.76)), url("espace-pc.jpg") center / cover no-repeat;
+  background: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, 0.18) 45%, #000 96%), url("espace-pc.jpg") center / cover no-repeat;
+  filter: hue-rotate(225deg) saturate(1.42);
   transform-origin: 86% 20%;
 }
 @media (max-width: 700px) {
   body::before {
-    background-image: linear-gradient(180deg, transparent 5%, rgba(8, 11, 24, 0.36) 45%, rgba(8, 11, 24, 0.7)), url("espace-mobile.jpg");
+    background-image: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, 0.26) 44%, #000 96%), url("espace-mobile.jpg");
     transform-origin: 50% 17%;
   }
 }
@@ -176,7 +177,7 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 </head>
 <body>
 <div id="pf-setup" hidden>
-  <h1>John Rockefeller</h1>
+  <h1>Accéder au portefeuille</h1>
   <p>Ouvre ton lien personnel ou colle-le ici pour afficher ton portefeuille sur ce navigateur.</p>
   <form id="pf-setup-form">
     <label for="pf-setup-link">Lien personnel du portefeuille</label>
@@ -204,7 +205,6 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
   padding: 0 max(14px, env(safe-area-inset-right)) 36px max(14px, env(safe-area-inset-left));
 
 }
-.pf .pf-title { font-family: var(--pf-display) !important; font-variant: normal; letter-spacing: 0.02em; font-size: clamp(1.7rem, 4.6vw, 2.6rem) !important; color: var(--pf-accent-cool); font-weight: 400 !important; }
 .pf .pf-h2, .pf .pf-lab, .pf .pf-tab, .pf .pf-per-lab, .pf .pf-table th, .pf .pf-chip, .pf .pf-field { font-family: var(--pf-display); font-variant: small-caps; letter-spacing: 0.08em; }
 .pf .pf-h2 { color: var(--pf-accent-cool); font-weight: 400; font-size: 1.15rem; }
 .pf .pf-lab { color: var(--pf-accent-warm); font-size: 0.85rem; }
@@ -227,7 +227,6 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 .pf { display: flex; flex-direction: column; gap: var(--cds-gap-lg); font-family: var(--font-anthropic-sans); color: var(--color-fg); }
 .pf-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--cds-gap-md); }
 .pf-headtext { min-width: 0; flex: 1 1 320px; }
-.pf-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0 0 var(--cds-gap-xs); }
 .pf-lede { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-body); line-height: 1.5; max-width: 62ch; }
 .pf-lede b { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); font-variant-numeric: tabular-nums; }
 .pf-cur { display: inline-flex; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); overflow: hidden; }
@@ -304,16 +303,24 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 .pf .pf-headtext { flex-basis: 100%; }
 .pf .pf-headtext { max-width: 720px; }
 .pf .pf-head { padding-top: clamp(54px, 11vh, 132px); }
-.pf .pf-headtext :is(.pf-lede, .pf-title) { text-shadow: 0 2px 12px #080b18; }
+.pf .pf-headtext { color: var(--pf-ink-2); text-shadow: 0 2px 12px #000; }
+.pf .pf-lede strong,
+.pf .pf-lede b,
+.pf .pf-big {
+  color: var(--pf-accent-cool);
+  text-shadow: 0 0 18px rgba(102, 247, 255, 0.32);
+}
+.pf .pf-h2, .pf .pf-lab { color: var(--pf-accent-warm); }
+.pf .pf-headtext .pf-up { color: var(--pf-positive); }
+.pf .pf-headtext .pf-down { color: var(--pf-negative); }
 .pf .pf-tile, .pf .pf-card {
   border: 1px solid var(--pf-border-soft);
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 0 24px rgba(143, 78, 255, 0.13), inset 2px 0 rgba(102, 247, 255, 0.38);
 }
 @media (max-width: 700px) {
   .pf .pf-head { padding-top: clamp(105px, 22vh, 190px); }
 }
-.pf .pf-title { color: var(--pf-accent-warm); letter-spacing: 0.015em; overflow-wrap: anywhere; }
 .pf .pf-lede { color: var(--pf-ink-2); }
 .pf .pf-tabs { gap: 4px; }
 .pf .pf-tab { padding: 10px clamp(8px, 3vw, 18px); }
@@ -327,16 +334,29 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
   .pf .pf-tabs { flex-wrap: wrap; }
   .pf .pf-app-bar { justify-content: flex-start; }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pf-flight-summary {
+    transform: translate3d(var(--flight-x, 0px), var(--flight-y, 0px), 0) scale(var(--flight-scale, 1));
+    opacity: var(--flight-opacity, 1);
+  }
+  .pf-flight-arrival { animation: flight-arrival 650ms ease-out both; }
+  @keyframes flight-arrival {
+    from { opacity: 0.28; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
 </style>
 
 <div class="pf">
   <header class="pf-head" id="entete">
     <div class="pf-headtext">
-      <h1 class="pf-title">John Rockefeller</h1>
-      <p class="pf-lede" data-read lang="fr"><span data-draw="phrase">—</span></p>
-      <div class="pf-marche" id="marche">
-        <span data-draw="marche-chip" data-source="marche_gs"></span>
-        <div class="pf-mkt" data-draw="marche-phrase" aria-label="Marchés"></div>
+      <div class="pf-flight-summary">
+        <p class="pf-lede" data-read lang="fr"><span data-draw="phrase">—</span></p>
+        <div class="pf-marche" id="marche">
+          <span data-draw="marche-chip" data-source="marche_gs"></span>
+          <div class="pf-mkt" data-draw="marche-phrase" aria-label="Marchés"></div>
+        </div>
       </div>
     </div>
     <div class="pf-cur" role="group" aria-label="Devise d'affichage">
@@ -1283,6 +1303,48 @@ dash.draw('proj-chart', (el) => {
 <script>
 document.querySelectorAll('#pf-refresh').forEach((b) => b.addEventListener('click', () => window.pfLoad()));
 window.pfLoad();
+(() => {
+  const origin = document.querySelector('.pf-headtext');
+  const summary = origin.querySelector('.pf-flight-summary');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const mobile = matchMedia('(max-width: 700px)');
+  let frame = 0;
+
+  function moveSummary() {
+    frame = 0;
+    if (reducedMotion.matches || !origin.getClientRects().length) return;
+    const bounds = origin.getBoundingClientRect();
+    const progress = Math.max(0, Math.min(1, (scrollY - 12) / (mobile.matches ? 250 : 300)));
+    const pull = progress ** 1.45;
+    const targetX = innerWidth * (mobile.matches ? 0.5 : 0.86);
+    const targetY = innerHeight * (mobile.matches ? 0.17 : 0.20);
+    summary.style.setProperty('--flight-x', ((targetX - bounds.left - bounds.width / 2) * pull) + 'px');
+    summary.style.setProperty('--flight-y', ((targetY - bounds.top - bounds.height / 2) * pull) + 'px');
+    summary.style.setProperty('--flight-scale', 1 - 0.93 * pull);
+    summary.style.setProperty('--flight-opacity', 1 - progress ** 1.25);
+  }
+
+  function requestFrame() {
+    if (!frame) frame = requestAnimationFrame(moveSummary);
+  }
+
+  addEventListener('scroll', requestFrame, { passive: true });
+  addEventListener('resize', requestFrame);
+  reducedMotion.addEventListener('change', requestFrame);
+  requestFrame();
+
+  if (!('IntersectionObserver' in window)) return;
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      observer.unobserve(entry.target);
+      if (!reducedMotion.matches && entry.boundingClientRect.top > 120) {
+        entry.target.classList.add('pf-flight-arrival');
+      }
+    }
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.pf-tiles > .pf-tile, .pf-panel > .pf-card').forEach((card) => observer.observe(card));
+})();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 

@@ -29,6 +29,8 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 .dash-select { font: inherit; font-size: 0.95rem; padding: 6px 28px 6px 10px; border: 1px solid #9a7a35; border-radius: 0; background-color: #f2e8cf; color: #2a2118; }
 .pf-app-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; justify-content: flex-end; }
 #pf-setup { max-width: 520px; margin: 40px auto; padding: 24px; font-family: Georgia, serif; color: #2a2118; background: #f8f1de; border: 6px double #1f4a37; }
+#pf-setup form { display: grid; gap: 10px; }
+#pf-setup input, #pf-setup button { font: inherit; padding: 8px; }
 </style>
 <script>
 /* Petit moteur qui remplace celui de Claude : lit les onglets publiés du tableau Google et redessine la page */
@@ -71,17 +73,44 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
     setParams(o) { Object.assign(params, o); try { localStorage.setItem('pf-params', JSON.stringify(params)); } catch (e) {} computeCalcs(); runAll(); },
     resetParams() {}, setLink() { setTimeout(runAll, 0); }, refresh() { load(); }
   };
+  let publicationKey;
+  function saveKey(key) {
+    publicationKey = key;
+    try { localStorage.setItem('pf-pub', key); } catch (e) {}
+  }
   const getKey = () => {
-    const m = location.hash.match(/k=([A-Za-z0-9_-]{20,})/);
-    if (m) { try { localStorage.setItem('pf-pub', m[1]); } catch (e) {} history.replaceState(null, '', location.pathname); return m[1]; }
+    const match = location.hash.match(/k=([A-Za-z0-9_-]{20,})/);
+    if (match) {
+      saveKey(match[1]);
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+    if (publicationKey) return publicationKey;
     try { return localStorage.getItem('pf-pub'); } catch (e) { return null; }
   };
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('pf-setup-form');
+    const input = document.getElementById('pf-setup-link');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const match = input.value.trim().match(/#k=([A-Za-z0-9_-]{20,})(?:&|$)/);
+      if (!match) {
+        input.setCustomValidity('Colle le lien personnel complet de ton portefeuille.');
+        input.reportValidity();
+        return;
+      }
+      saveKey(match[1]);
+      form.reset();
+      load();
+    });
+    input.addEventListener('input', () => input.setCustomValidity(''));
+  });
   let loading = false;
   async function load() {
     const key = getKey();
     const setup = document.getElementById('pf-setup');
-    if (!key) { if (setup) setup.hidden = false; return; }
-    if (setup) setup.hidden = true;
+    setup.hidden = Boolean(key);
+    document.getElementById('dash-root').hidden = !key;
+    if (!key) return;
     if (loading) return; loading = true;
     const maj = document.getElementById('pf-maj'); if (maj) maj.textContent = 'Mise à jour…';
     await Promise.all(Object.entries(GIDS).map(async ([id, gid]) => {
@@ -109,9 +138,14 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 <body>
 <div id="pf-setup" hidden>
   <h1 style="font-variant: small-caps; color: #1f4a37; margin-top: 0">Mon Portefeuille</h1>
-  <p>Cette appli doit être ouverte une première fois avec ton lien personnel (celui que Claude t'a donné). Ensuite elle s'en souvient.</p>
+  <p>Ouvre ton lien personnel ou colle-le ici pour afficher ton portefeuille sur ce navigateur.</p>
+  <form id="pf-setup-form">
+    <label for="pf-setup-link">Lien personnel du portefeuille</label>
+    <input id="pf-setup-link" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+    <button type="submit">Afficher mon portefeuille</button>
+  </form>
 </div>
-<div id="dash-root">
+<div id="dash-root" hidden>
 <style>
 /* Thème « John D. Rockefeller » : certificat d'action Standard Oil des années 1880, papier crème, encre, vert billet, sang-de-bœuf, laiton */
 #dash-root { --dash-gutter: 0; }

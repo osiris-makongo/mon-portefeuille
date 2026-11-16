@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mon Portefeuille</title>
+<meta name="theme-color" content="#1f4a37">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex">
+<style>
+:root {
+  --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 14px; --cds-gap-lg: 22px; --cds-gap-xl: 32px;
+  --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 18px; --cds-radius: 2px;
+  --cds-font-size-caption: 0.8rem; --cds-font-size-body: 0.95rem; --cds-font-size-heading: 1.15rem; --cds-font-size-title: 2rem;
+  --cds-font-weight-medium: 600; --font-anthropic-serif: Georgia, serif; --font-anthropic-sans: system-ui, sans-serif;
+  --cds-dur-slow: 400ms; --cds-ease-out: cubic-bezier(.2,.7,.2,1);
+}
+html, body { margin: 0; height: 100%; background: #f2e8cf; }
+body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
+[hidden] { display: none !important; }
+.dash-skeleton { background: rgba(154,122,53,0.15); border-radius: 2px; animation: pfpulse 1.4s ease-in-out infinite; color: transparent !important; }
+@keyframes pfpulse { 50% { opacity: .55; } }
+.dash-select { font: inherit; font-size: 0.95rem; padding: 6px 28px 6px 10px; border: 1px solid #9a7a35; border-radius: 0; background-color: #f2e8cf; color: #2a2118; }
+.pf-app-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; justify-content: flex-end; }
+#pf-setup { max-width: 520px; margin: 40px auto; padding: 24px; font-family: Georgia, serif; color: #2a2118; background: #f8f1de; border: 6px double #1f4a37; }
+</style>
+<script>
+/* Petit moteur qui remplace celui de Claude : lit les onglets publiés du tableau Google et redessine la page */
+(function () {
+  const GIDS = {lignes_gs: 1, achats_gs: 3, histo_gs: 4, marche_gs: 5, suivi_gs: 6};
+  const SKIP = {lignes_gs: 3};
+  const L = {}, C = {}, Dr = {}, data = {};
+  let params = {horizon: 12, mensuel: 200};
+  try { const p = JSON.parse(localStorage.getItem('pf-params') || 'null'); if (p) Object.assign(params, p); } catch (e) {}
+  const runDraw = (name) => {
+    const d = Dr[name]; if (!d) return;
+    document.querySelectorAll('[data-draw="' + name + '"]').forEach((el) => {
+      if (el.closest('[hidden]')) return;
+      try { if (d.mount && !el.__pfm) el.__pfm = d.mount(el) || true; (d.update || (() => {}))(el, el.__pfm); } catch (e) { console.error('dessin', name, e); }
+    });
+  };
+  const runAll = () => Object.keys(Dr).forEach(runDraw);
+  const computeCalcs = () => {
+    const done = {};
+    const get = (id) => {
+      if (C[id]) {
+        if (done[id]) return done[id];
+        const ins = C[id].inputs.map(get);
+        let st = 'ok';
+        for (const i of ins) if (i.status !== 'ok') { st = i.status === 'error' ? 'error' : 'loading'; break; }
+        let res = {status: st, data: null};
+        if (st === 'ok') { try { res = {status: 'ok', data: C[id].fn(...ins.map((i) => i.data))}; } catch (e) { console.error('calcul', id, e); res = {status: 'error', data: null}; } }
+        done[id] = res; data[id] = res; return res;
+      }
+      return data[id] || {status: 'loading', data: []};
+    };
+    Object.keys(C).forEach(get);
+  };
+  window.dash = {
+    colors: ['var(--pf-accent)'],
+    loader(id, o) { L[id] = o; }, calc(id, o) { C[id] = o; },
+    draw(name, f) { if (f === undefined) { runDraw(name); return; } Dr[name] = typeof f === 'function' ? {update: f} : f; },
+    data(id) { return data[id] || {status: 'loading', data: C[id] ? null : []}; },
+    onData() {}, params() { return Object.assign({}, params); },
+    setParams(o) { Object.assign(params, o); try { localStorage.setItem('pf-params', JSON.stringify(params)); } catch (e) {} computeCalcs(); runAll(); },
+    resetParams() {}, setLink() { setTimeout(runAll, 0); }, refresh() { load(); }
+  };
+  const getKey = () => {
+    const m = location.hash.match(/k=([A-Za-z0-9_-]{20,})/);
+    if (m) { try { localStorage.setItem('pf-pub', m[1]); } catch (e) {} history.replaceState(null, '', location.pathname); return m[1]; }
+    try { return localStorage.getItem('pf-pub'); } catch (e) { return null; }
+  };
+  let loading = false;
+  async function load() {
+    const key = getKey();
+    const setup = document.getElementById('pf-setup');
+    if (!key) { if (setup) setup.hidden = false; return; }
+    if (setup) setup.hidden = true;
+    if (loading) return; loading = true;
+    const maj = document.getElementById('pf-maj'); if (maj) maj.textContent = 'Mise à jour…';
+    await Promise.all(Object.entries(GIDS).map(async ([id, gid]) => {
+      try {
+        const r = await fetch('https://docs.google.com/spreadsheets/d/e/' + key + '/pub?gid=' + gid + '&single=true&output=csv&_=' + Date.now(), {cache: 'no-store'});
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const rows = d3.csvParseRows(await r.text()).slice(SKIP[id] || 0);
+        const res = L[id].fn({answer: {values: rows}});
+        data[id] = {status: 'ok', data: Array.isArray(res) ? res : res.data};
+      } catch (e) { console.error(id, e); if (!data[id] || data[id].status !== 'ok') data[id] = {status: 'error', data: []}; }
+    }));
+    computeCalcs(); runAll(); loading = false;
+    const ok = Object.keys(GIDS).every((id) => data[id] && data[id].status === 'ok');
+    if (maj) maj.textContent = (ok ? 'Mis à jour à ' : 'Problème de connexion · dernière tentative à ') + new Date().toLocaleTimeString('fr-CH', {hour: '2-digit', minute: '2-digit'});
+  }
+  window.pfLoad = load;
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(runAll, 150); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
+  setInterval(() => { if (!document.hidden) load(); }, 5 * 60 * 1000);
+})();
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+</head>
+<body>
+<div id="pf-setup" hidden>
+  <h1 style="font-variant: small-caps; color: #1f4a37; margin-top: 0">Mon Portefeuille</h1>
+  <p>Cette appli doit être ouverte une première fois avec ton lien personnel (celui que Claude t'a donné). Ensuite elle s'en souvient.</p>
+</div>
+<div id="dash-root">
+<style>
+/* Thème « John D. Rockefeller » : certificat d'action Standard Oil des années 1880, papier crème, encre, vert billet, sang-de-bœuf, laiton */
+#dash-root { --dash-gutter: 0; }
+.pf {
+  --pf-paper: #f2e8cf; --pf-paper-2: #f8f1de; --pf-ink: #2a2118; --pf-ink-2: #6b5a43;
+  --pf-green: #1f4a37; --pf-oxblood: #7b2219; --pf-brass: #9a7a35; --pf-brass-soft: rgba(154, 122, 53, 0.45); --pf-brass-faint: rgba(154, 122, 53, 0.16);
+  --pf-display: 'Baskerville', 'Baskerville Old Face', 'Hoefler Text', 'Libre Baskerville', Garamond, Georgia, 'Times New Roman', serif;
+  --pf-text: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --color-bg: var(--pf-paper); --color-panel: var(--pf-paper-2); --color-fg: var(--pf-ink); --color-fg-muted: var(--pf-ink-2);
+  --color-border-line: var(--pf-brass-soft); --color-ok: #2f6b3a; --color-bad: #9a2d20; --color-warn: #9a6a12;
+  --cds-text-secondary: var(--pf-ink-2); --cds-chart-grid: rgba(42, 33, 24, 0.10); --cds-chart-axis: var(--pf-brass-soft);
+  --cds-chart-reference: var(--pf-brass-soft); --cds-chart-muted: var(--pf-ink-2);
+  --cds-surface-popover: #fbf6e8; --cds-border: var(--pf-brass); --cds-shadow-popover: 0 6px 18px rgba(42, 33, 24, 0.25);
+  --pf-accent: var(--pf-green);
+  color-scheme: light;
+  font-family: var(--pf-text) !important;
+  background-color: var(--pf-paper);
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 252, 240, 0.7), rgba(255, 252, 240, 0) 60%),
+    repeating-linear-gradient(45deg, rgba(154, 122, 53, 0.035) 0 2px, transparent 2px 7px),
+    repeating-linear-gradient(-45deg, rgba(154, 122, 53, 0.035) 0 2px, transparent 2px 7px);
+  padding-block: 28px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border: 6px double var(--pf-green);
+  outline: 1px solid var(--pf-brass);
+  outline-offset: -12px;
+  min-height: 100%;
+}
+.pf .pf-title { font-family: var(--pf-display) !important; font-variant: small-caps; letter-spacing: 0.12em; font-size: clamp(1.7rem, 4.6vw, 2.6rem) !important; color: var(--pf-green); font-weight: 400 !important; }
+.pf .pf-title::before { content: '\2766'; display: inline-block; margin-right: 0.4em; color: var(--pf-oxblood); font-size: 0.7em; vertical-align: 0.12em; }
+.pf .pf-title::after { content: ''; display: block; width: min(320px, 70%); height: 6px; margin-top: 8px;
+  background: linear-gradient(var(--pf-oxblood), var(--pf-oxblood)) top / 100% 2px no-repeat, linear-gradient(var(--pf-brass), var(--pf-brass)) bottom / 100% 1px no-repeat; }
+.pf .pf-h2, .pf .pf-lab, .pf .pf-tab, .pf .pf-per-lab, .pf .pf-table th, .pf .pf-chip, .pf .pf-field { font-family: var(--pf-display); font-variant: small-caps; letter-spacing: 0.08em; }
+.pf .pf-h2 { color: var(--pf-green); font-weight: 400; font-size: 1.15rem; }
+.pf .pf-lab { color: var(--pf-oxblood); font-size: 0.85rem; }
+.pf .pf-big { font-family: var(--pf-display) !important; color: var(--pf-ink); }
+.pf .pf-tile, .pf .pf-card { background: var(--pf-paper-2); border: 1px solid var(--pf-brass); border-radius: 0;
+  box-shadow: inset 0 0 0 3px var(--pf-paper-2), inset 0 0 0 4px var(--pf-brass-soft), 0 1px 0 rgba(42, 33, 24, 0.08); }
+.pf .pf-tile { border-top: 3px double var(--pf-green); }
+.pf .pf-cur, .pf .pf-per-btns { border-color: var(--pf-brass); border-radius: 0; }
+.pf .pf-cur-btn, .pf .pf-per-btn { font-family: var(--pf-display); }
+.pf .pf-cur-btn[aria-pressed="true"], .pf .pf-per-btn[aria-pressed="true"] { background: var(--pf-green); color: var(--pf-paper-2); }
+.pf .pf-tab[aria-selected="true"] { color: var(--pf-oxblood); border-bottom-color: var(--pf-oxblood); }
+.pf .pf-tabs { border-bottom: 3px double var(--pf-brass-soft); }
+.pf .pf-table th { color: var(--pf-green); font-size: 0.85rem; font-weight: 400; border-bottom: 3px double var(--pf-brass); }
+.pf .pf-table td { border-bottom-color: var(--pf-brass-faint); }
+.pf .pf-row:hover td, .pf .pf-row.is-sel td { background: var(--pf-brass-faint); }
+.pf .pf-back, .pf .pf-input, .pf .dash-select { border-color: var(--pf-brass); border-radius: 0; background-color: var(--pf-paper); color: var(--pf-ink); }
+.pf .pf-notes summary { color: var(--pf-green); font-variant: small-caps; }
+.pf .pf-tip { border-radius: 0; font-family: var(--pf-text); }
+.pf .pf-chart text { font-family: var(--pf-text); }
+.pf { display: flex; flex-direction: column; gap: var(--cds-gap-lg); font-family: var(--font-anthropic-sans); color: var(--color-fg); }
+.pf-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--cds-gap-md); }
+.pf-headtext { min-width: 0; flex: 1 1 320px; }
+.pf-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0 0 var(--cds-gap-xs); }
+.pf-lede { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-body); line-height: 1.5; max-width: 62ch; }
+.pf-lede b { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); font-variant-numeric: tabular-nums; }
+.pf-cur { display: inline-flex; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); overflow: hidden; }
+.pf-cur-btn { font: inherit; font-size: var(--cds-font-size-body); padding: 6px 14px; border: 0; background: transparent; color: var(--color-fg-muted); cursor: pointer; }
+.pf-cur-btn + .pf-cur-btn { border-left: 1px solid var(--color-border-line); }
+.pf-cur-btn[aria-pressed="true"] { background: var(--color-panel); color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.pf-cur-btn:focus-visible, .pf-back:focus-visible, .pf-row:focus-visible { outline: 2px solid var(--color-fg); outline-offset: -2px; }
+.pf-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--cds-gap-md); }
+.pf-tile, .pf-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+.pf-lab { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-bottom: var(--cds-gap-xs); }
+.pf-big { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 2rem; line-height: 1.15; font-variant-numeric: tabular-nums; min-height: 1.15em; }
+.pf-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-xs); font-variant-numeric: tabular-nums; }
+.pf-up { color: var(--color-ok); }
+.pf-down { color: var(--color-bad); }
+.pf-cardhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--cds-gap-sm); }
+.pf-h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.pf-back { font: inherit; font-size: var(--cds-font-size-caption); padding: 4px 10px; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); color: var(--color-fg); cursor: pointer; }
+.pf-chart { position: relative; min-height: 300px; margin-top: var(--cds-gap-md); }
+.pf-chart svg { display: block; overflow: visible; }
+.pf-chart text { fill: var(--cds-text-secondary); font-size: 11px; font-family: var(--font-anthropic-sans); }
+.pf-chart .domain { display: none; }
+.pf-chart .tick line { stroke: var(--cds-chart-grid); }
+.pf-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); box-shadow: var(--cds-shadow-popover); border-radius: var(--cds-radius); padding: 6px 10px; font-size: var(--cds-font-size-caption); white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; }
+.pf-tip-d { color: var(--cds-text-secondary); }
+.pf-fail { color: var(--color-fg-muted); font-size: var(--cds-font-size-body); padding: var(--cds-pad-lg) 0; }
+.pf-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-sm); }
+.pf-key { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+.pf-tablewrap { overflow-x: auto; margin-top: var(--cds-gap-md); }
+.pf-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
+.pf-table th { text-align: right; font-weight: var(--cds-font-weight-medium); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); padding: 6px 8px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.pf-table th:first-child, .pf-table td:first-child { text-align: left; }
+.pf-table td { text-align: right; padding: 8px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.pf-row { cursor: pointer; }
+.pf-row:hover td { background: var(--color-bg); }
+.pf-row.is-sel td { background: var(--color-bg); font-weight: var(--cds-font-weight-medium); }
+.pf-tag { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-left: 6px; }
+.pf-tabs { display: flex; gap: var(--cds-gap-xs); border-bottom: 1px solid var(--color-border-line); }
+.pf-tab { font: inherit; font-size: var(--cds-font-size-body); padding: 8px 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--color-fg-muted); cursor: pointer; margin-bottom: -1px; }
+.pf-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.pf-tab:focus-visible { outline: 2px solid var(--color-fg); outline-offset: -2px; }
+.pf-panel { display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
+.pf-controls { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); align-items: flex-end; }
+.pf-field { display: flex; flex-direction: column; gap: 4px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); min-width: 0; }
+.pf-input { font: inherit; font-size: var(--cds-font-size-body); padding: 6px 10px; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); color: var(--color-fg); width: 9em; }
+.pf-input:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 1px; }
+.pf-scen { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--cds-gap-md); }
+.pf-scen-key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.pf-warn { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.5; max-width: 70ch; }
+.pf-per { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); }
+.pf-per-lab { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.pf-per-btns { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); overflow: hidden; }
+.pf-per-btn { font: inherit; font-size: var(--cds-font-size-body); padding: 6px 12px; border: 0; background: transparent; color: var(--color-fg-muted); cursor: pointer; }
+.pf-per-btn + .pf-per-btn { border-left: 1px solid var(--color-border-line); }
+.pf-per-btn[aria-pressed="true"] { background: var(--color-panel); color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.pf-per-btn:focus-visible { outline: 2px solid var(--color-fg); outline-offset: -2px; }
+.pf-marche { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--cds-gap-sm); margin-top: var(--cds-gap-sm); font-size: var(--cds-font-size-body); color: var(--color-fg-muted); line-height: 1.5; max-width: 72ch; }
+.pf-marche b { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); font-variant-numeric: tabular-nums; }
+.pf-chip { display: inline-block; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); padding: 2px 10px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.pf-chip-ok { color: var(--color-ok); }
+.pf-chip-warn { color: var(--color-warn); }
+.pf-chip-bad { color: var(--color-bad); }
+.pf-notes { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.pf-notes summary { cursor: pointer; color: var(--color-fg); }
+.pf-notes ul { margin: var(--cds-gap-sm) 0 0; padding-left: 1.2em; line-height: 1.6; }
+</style>
+
+<div class="pf">
+  <header class="pf-head" id="entete">
+    <div class="pf-headtext">
+      <h1 class="pf-title">Mon Portefeuille</h1>
+      <p class="pf-lede" data-read lang="fr"><span data-draw="phrase">—</span></p>
+      <div class="pf-marche" id="marche">
+        <span data-draw="marche-chip" data-source="marche_gs"></span>
+        <span data-read lang="fr" data-draw="marche-phrase">—</span>
+      </div>
+    </div>
+    <div class="pf-cur" role="group" aria-label="Devise d'affichage">
+      <button type="button" class="pf-cur-btn" data-cur="CHF" aria-pressed="true">Fr</button>
+      <button type="button" class="pf-cur-btn" data-cur="EUR" aria-pressed="false">€</button>
+      <button type="button" class="pf-cur-btn" data-cur="USD" aria-pressed="false">$</button>
+    </div>
+    <div class="pf-app-bar">
+      <button type="button" class="pf-back" id="pf-refresh">↻ Actualiser</button>
+      <span class="pf-sub" id="pf-maj"></span>
+    </div>
+  </header>
+
+  <nav class="pf-tabs" role="tablist" aria-label="Vues">
+    <button type="button" class="pf-tab" role="tab" data-tab="vue" aria-selected="true">Mon portefeuille</button>
+    <button type="button" class="pf-tab" role="tab" data-tab="projection" aria-selected="false">Projection</button>
+  </nav>
+
+  <div class="pf-panel" id="vue" role="tabpanel">
+  <section class="pf-tiles" id="resume">
+    <div class="pf-tile" id="tuile-valeur">
+      <div class="pf-lab">Valeur totale</div>
+      <div class="pf-big" data-draw="t-valeur" data-fetchpriority="high">—</div>
+      <div class="pf-sub" data-draw="t-date">—</div>
+    </div>
+    <div class="pf-tile" id="tuile-gain">
+      <div class="pf-lab">Gain ou perte au total</div>
+      <div class="pf-big" data-draw="t-gain">—</div>
+      <div class="pf-sub" data-draw="t-gainpct">—</div>
+    </div>
+    <div class="pf-tile" id="tuile-investi">
+      <div class="pf-lab">Argent investi</div>
+      <div class="pf-big" data-draw="t-investi">—</div>
+      <div class="pf-sub">Frais Revolut compris</div>
+    </div>
+    <div class="pf-tile" id="tuile-periode">
+      <div class="pf-lab" data-draw="t-per-lab">—</div>
+      <div class="pf-big" data-draw="t-per">—</div>
+      <div class="pf-sub" data-draw="t-per-sub">—</div>
+    </div>
+  </section>
+
+  <section class="pf-card" id="courbe">
+    <div class="pf-cardhead">
+      <h2 class="pf-h2" data-draw="detail-titre">—</h2>
+      <button type="button" class="pf-back" id="retour" hidden>← Tout le portefeuille</button>
+    </div>
+    <div class="pf-sub" data-draw="detail-sous">—</div>
+  <div class="pf-per" id="periode" style="margin-top: var(--cds-gap-md)">
+    <span class="pf-per-lab">Depuis</span>
+    <div class="pf-per-btns" role="group" aria-label="Période">
+      <button type="button" class="pf-per-btn" data-per="1j" aria-pressed="true">24 h</button>
+      <button type="button" class="pf-per-btn" data-per="2j" aria-pressed="false">48 h</button>
+      <button type="button" class="pf-per-btn" data-per="7j" aria-pressed="false">7 jours</button>
+      <button type="button" class="pf-per-btn" data-per="1m" aria-pressed="false">1 mois</button>
+      <button type="button" class="pf-per-btn" data-per="tout" aria-pressed="false">Le début</button>
+    </div>
+  </div>
+    <div class="pf-chart" data-draw="chart" data-source="historique"></div>
+  </section>
+
+  <section class="pf-card" id="actions">
+    <h2 class="pf-h2">Mes actions</h2>
+    <div class="pf-sub">Clique sur une ligne pour voir la courbe de cette action seule.</div>
+    <div class="pf-tablewrap" data-draw="table"></div>
+  </section>
+  </div>
+
+  <div class="pf-panel" id="projection" role="tabpanel" hidden>
+    <section class="pf-card" id="proj-reglages">
+      <div class="pf-controls">
+        <label class="pf-field" for="proj-sujet">Quoi
+          <select class="dash-select" id="proj-sujet" data-draw="proj-sujet" data-source="lignes"></select>
+        </label>
+        <label class="pf-field" for="proj-horizon">Dans combien de temps
+          <select class="dash-select" id="proj-horizon">
+            <option value="6">6 mois</option>
+            <option value="12" selected>1 an</option>
+            <option value="36">3 ans</option>
+            <option value="60">5 ans</option>
+          </select>
+        </label>
+        <label class="pf-field" for="proj-mensuel">Ajout chaque mois (Fr)
+          <input class="pf-input" id="proj-mensuel" type="number" min="0" step="10" value="200" inputmode="decimal">
+        </label>
+      </div>
+    </section>
+
+    <section class="pf-card" id="proj-resultat">
+      <h2 class="pf-h2" data-draw="proj-titre">—</h2>
+      <p class="pf-lede" data-read lang="fr"><span data-draw="proj-phrase">—</span></p>
+      <div class="pf-scen" data-draw="proj-tuiles" data-source="projection_fin" style="margin-top: var(--cds-gap-md)"></div>
+      <div class="pf-chart" data-draw="proj-chart" data-source="projection"></div>
+      <p class="pf-warn">Ce sont des scénarios, pas des prévisions. Le scénario normal suppose +7 % par an, à peu près la moyenne des marchés d'actions sur le long terme. Le pessimiste et l'optimiste viennent de la façon dont l'action (ou ton portefeuille) a bougé depuis ton achat : à peu près 2 chances sur 3 de finir entre les deux, mais rien n'est garanti. Avec seulement quelques semaines d'historique, la fourchette reste approximative.</p>
+    </section>
+  </div>
+
+  <details class="pf-notes" id="notes">
+    <summary>Comment c'est calculé</summary>
+    <ul>
+      <li>Le % d'une action se calcule comme sur Revolut : prix du jour comparé à ton prix moyen d'achat, dans la devise de l'action, sans les frais.</li>
+      <li>Les montants en Fr, € et $ utilisent le taux de change du jour. Le gain en Fr compare la valeur d'aujourd'hui à ce que tu as payé en Fr le jour de chaque achat, donc il inclut l'effet du dollar.</li>
+      <li>Les chiffres viennent de ton tableau Google « Mon Portefeuille », qui prend les cours sur Google Finance (environ 20 minutes de retard). La page relit le tableau à chaque ouverture.</li>
+      <li>Sur 24 h et 48 h, la courbe a un point par heure : un relevé automatique note la valeur toutes les heures, du lundi au vendredi de 9 h à 22 h. Les relevés ont commencé le 16 novembre 2026 au soir.</li>
+      <li>L'humeur du marché en haut vient de l'onglet « Marché » du tableau. Calme : les grands indices sont à moins de 5 % de leur plus haut et le VIX est sous 20. Un peu agité : recul de 5 à 10 % ou VIX entre 20 et 30. Période difficile : correction de 10 à 20 % ou VIX au-dessus de 30. Forte baisse : plus de 20 % sous le plus haut.</li>
+      <li>Le gain total compte les frais Revolut. Le % de chaque action ne les compte pas, comme sur Revolut.</li>
+      <li>ETF Santé : cours de Londres en dollars, converti en euros. ETF Puces : Google ne le trouve pas, son prix se met à la main dans le tableau.</li>
+      <li>Un nouvel achat s'ajoute dans l'onglet Achats du tableau (et dans Mes actions si c'est une nouvelle action) : la page le reprend toute seule.</li>
+    </ul>
+  </details>
+</div>
+
+<script>
+// ---------- lecture du tableau Google ----------
+window.pfNum = function (s) {
+  if (s == null) return null;
+  if (typeof s === 'number') return s;
+  let t = String(s).trim();
+  if (!t || t[0] === '#') return null;
+  const pct = t.endsWith('%');
+  t = t.replace(/[%\s  '’]/g, '').replace(',', '.').replace('−', '-');
+  const n = Number(t);
+  if (!isFinite(n)) return null;
+  return pct ? n / 100 : n;
+};
+window.pfDate = function (s) {
+  if (!s) return null;
+  const t = String(s).trim();
+  let m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + '-' + m[2] + '-' + m[3];
+  m = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/);
+  if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+  return null;
+};
+window.pfValues = function (answer) {
+  let a = answer;
+  if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+  if (a && a.content) a = a.content;
+  if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || 'Erreur Google Sheets'));
+  return (a && a.values) || [];
+};
+
+dash.loader('lignes_gs', {
+  description: "Lit l'onglet « Mes actions » : une ligne par action, avec les colonnes du tableau.",
+  fn: ({answer}) => {
+    const v = window.pfValues(answer);
+    const N = window.pfNum;
+    const rows = [];
+    for (let i = 1; i < v.length; i++) {
+      const r = v[i] || [];
+      if (!r[0] || !r[1]) continue;
+      rows.push({nom: r[0], ticker: r[1], devise: r[2] || 'USD', cotee: r[3] || r[2] || 'USD', manuel: r[4] ? 1 : 0,
+        quantite: N(r[5]), prix_moyen: N(r[6]), prix: N(r[7]), pct: N(r[8]), valeur_devise: N(r[9]), taux_chf: N(r[10]),
+        valeur_chf: N(r[11]), investi_chf: N(r[12]), gain_chf: N(r[13]), gain_pct: N(r[14]), jour: N(r[15])});
+    }
+    return {data: rows, columns: ['nom', 'ticker', 'devise', 'cotee', 'manuel', 'quantite', 'prix_moyen', 'prix', 'pct', 'valeur_devise', 'taux_chf', 'valeur_chf', 'investi_chf', 'gain_chf', 'gain_pct', 'jour']};
+  }
+});
+
+dash.loader('achats_gs', {
+  description: "Lit l'onglet « Achats » : date, ticker, quantité, prix, devise et coût en francs (frais compris).",
+  fn: ({answer}) => {
+    const v = window.pfValues(answer);
+    const N = window.pfNum;
+    const rows = [];
+    for (let i = 1; i < v.length; i++) {
+      const r = v[i] || [];
+      const d = window.pfDate(r[0]);
+      if (!d || !r[2]) continue;
+      rows.push({date: d, nom: r[1], ticker: r[2], quantite: N(r[3]), prix: N(r[4]), devise: r[5] || 'USD', cout_devise: N(r[7]), cout_chf: N(r[8]), frais: N(r[9]) || 0});
+    }
+    return {data: rows, columns: ['date', 'nom', 'ticker', 'quantite', 'prix', 'devise', 'cout_devise', 'cout_chf', 'frais']};
+  }
+});
+
+dash.loader('histo_gs', {
+  description: "Lit l'onglet « Historique » : cours de clôture de chaque action et taux de change, jour par jour.",
+  fn: ({answer}) => {
+    const v = window.pfValues(answer);
+    const head = v[0] || [];
+    const rows = [];
+    for (let c = 0; c < head.length; c += 3) {
+      const sym = head[c];
+      if (!sym) continue;
+      const key = sym === 'CURRENCY:USDCHF' ? 'USDCHF' : sym === 'CURRENCY:EURCHF' ? 'EURCHF' : sym;
+      for (let i = 2; i < v.length; i++) {
+        const r = v[i] || [];
+        const d = window.pfDate(r[c]);
+        const x = window.pfNum(r[c + 1]);
+        if (d && x != null) rows.push({ticker: key, date: d, close: x});
+      }
+    }
+    return {data: rows, columns: ['ticker', 'date', 'close']};
+  }
+});
+
+dash.loader('marche_gs', {
+  description: "Lit l'onglet « Marché » : S&P 500, Nasdaq 100, SMI et VIX, avec leur variation du jour, sur 1 mois et l'écart à leur plus haut sur 1 an (en %).",
+  fn: ({answer}) => {
+    const v = window.pfValues(answer), N = window.pfNum;
+    const rows = [];
+    for (let i = 1; i < v.length; i++) {
+      const r = v[i] || [];
+      if (!r[1]) continue;
+      const pc = (x) => (N(x) == null ? null : Math.round(N(x) * 10000) / 100);
+      rows.push({indice: r[0], ticker: r[1], niveau: N(r[2]), jour: pc(r[3]), mois: pc(r[5]), plus_haut: N(r[6]), ecart: pc(r[7])});
+    }
+    return {data: rows, columns: ['indice', 'ticker', 'niveau', 'jour', 'mois', 'plus_haut', 'ecart']};
+  }
+});
+
+dash.loader('suivi_gs', {
+  description: "Lit l'onglet « Suivi » : la valeur du portefeuille et de chaque action, relevée toutes les heures quand la bourse est ouverte.",
+  fn: ({answer}) => {
+    const v = window.pfValues(answer), N = window.pfNum;
+    const head = v[0] || [];
+    const rows = [];
+    for (let i = 3; i < v.length; i++) {
+      const r = v[i] || [];
+      const ts = String(r[0] || '').trim();
+      if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(ts)) continue;
+      const t = ts.slice(0, 16);
+      if (N(r[1]) != null) rows.push({symbol: 'TOTAL', ts: t, valeur_chf: N(r[1]), investi_chf: N(r[2])});
+      for (let c = 3; c < head.length; c += 2) {
+        if (!head[c] || N(r[c]) == null || N(r[c]) === 0) continue;
+        rows.push({symbol: head[c], ts: t, valeur_chf: N(r[c]), investi_chf: N(r[c + 1])});
+      }
+    }
+    return {data: rows, columns: ['symbol', 'ts', 'valeur_chf', 'investi_chf']};
+  }
+});
+
+// ---------- calculs ----------
+dash.calc('change', {
+  title: 'Taux de change',
+  description: "Dollar et euro en francs suisses, chaque jour (Google Finance).",
+  inputs: ['histo_gs'],
+  fn: (histo) => {
+    const usd = new Map(), eur = new Map();
+    for (const h of histo) { if (h.ticker === 'USDCHF') usd.set(h.date, h.close); else if (h.ticker === 'EURCHF') eur.set(h.date, h.close); }
+    const dates = [...new Set([...usd.keys(), ...eur.keys()])].sort();
+    let lu = null, le = null;
+    return dates.map((date) => { if (usd.has(date)) lu = usd.get(date); if (eur.has(date)) le = eur.get(date); return {date, usdchf: lu, eurchf: le}; });
+  }
+});
+
+window.pfFx = function (fx, date) {
+  let best = fx[0];
+  for (const r of fx) { if (r.date <= date) best = r; else break; }
+  return best ? {usd: best.usdchf, eur: best.eurchf, CHF: 1, USD: best.usdchf, EUR: best.eurchf} : {usd: 1, eur: 1, CHF: 1, USD: 1, EUR: 1};
+};
+
+dash.calc('lignes', {
+  title: 'Mes lignes',
+  description: "Chaque action telle que le tableau la calcule, avec la valeur et le gain convertis en euros et en dollars au taux du jour.",
+  inputs: ['lignes_gs', 'change'],
+  fn: (lignes, change) => {
+    if (!lignes.length || !change || !change.length) return [];
+    const now = window.pfFx(change, '9999-12-31');
+    const r2 = (x) => (x == null ? null : Math.round(x * 100) / 100);
+    const out = lignes.filter((l) => l.quantite).map((l) => ({
+      symbol: l.ticker, nom: l.nom, devise: l.devise, manuel: l.manuel, prix: l.prix, prix_moyen: l.prix_moyen,
+      pct: r2(l.pct * 100), jour: l.jour == null ? null : r2(l.jour * 100),
+      valeur_chf: r2(l.valeur_chf), valeur_eur: r2(l.valeur_chf / now.eur), valeur_usd: r2(l.valeur_chf / now.usd),
+      gain_chf: r2(l.gain_chf), gain_eur: r2(l.gain_chf / now.eur), gain_usd: r2(l.gain_chf / now.usd),
+      investi_chf: r2(l.investi_chf), jour_chf: l.jour == null ? 0 : r2(l.valeur_chf * l.jour / (1 + l.jour))}));
+    out.sort((a, b) => b.valeur_chf - a.valeur_chf);
+    return out;
+  }
+});
+
+dash.calc('total', {
+  title: 'Total du portefeuille',
+  description: "Somme de toutes les lignes en francs, euros et dollars, gain réel (frais compris) et variation du jour.",
+  inputs: ['lignes', 'change'],
+  fn: (lignes, change) => {
+    if (!lignes || !lignes.length || !change || !change.length) return [];
+    const now = window.pfFx(change, '9999-12-31');
+    let v = 0, inv = 0, j = 0;
+    for (const l of lignes) { v += l.valeur_chf || 0; inv += l.investi_chf || 0; j += l.jour_chf || 0; }
+    const r2 = (x) => Math.round(x * 100) / 100;
+    const g = v - inv;
+    const date = change[change.length - 1].date;
+    return [{valeur_chf: r2(v), valeur_eur: r2(v / now.eur), valeur_usd: r2(v / now.usd),
+      investi_chf: r2(inv), investi_eur: r2(inv / now.eur), investi_usd: r2(inv / now.usd),
+      gain_chf: r2(g), gain_eur: r2(g / now.eur), gain_usd: r2(g / now.usd), pct: r2((g / inv) * 100),
+      jour_chf: r2(j), jour_eur: r2(j / now.eur), jour_usd: r2(j / now.usd), date, usdchf: now.usd, eurchf: now.eur}];
+  }
+});
+
+dash.calc('historique', {
+  title: 'Courbes jour par jour',
+  description: "Pour chaque jour de bourse depuis ton premier achat : le % de chaque action par rapport à ton prix moyen de ce jour-là, et la valeur du portefeuille comparée à l'argent investi (frais compris), en francs.",
+  inputs: ['achats_gs', 'histo_gs', 'change', 'lignes_gs'],
+  fn: (achats, histo, change, lignes) => {
+    if (!achats.length || !histo.length || !change || !change.length) return [];
+    const info = new Map(lignes.map((l) => [l.ticker, l]));
+    const start = achats.reduce((m, a) => (a.date < m ? a.date : m), '9999');
+    const px = new Map();
+    for (const h of histo) { if (h.ticker === 'USDCHF' || h.ticker === 'EURCHF') continue; if (!px.has(h.ticker)) px.set(h.ticker, new Map()); px.get(h.ticker).set(h.date, h.close); }
+    const dates = [...new Set(histo.filter((h) => h.ticker !== 'USDCHF' && h.ticker !== 'EURCHF' && h.date >= start).map((h) => h.date))].sort();
+    const tickers = [...new Set(achats.map((a) => a.ticker))];
+    const last = new Map();
+    const r2 = (x) => Math.round(x * 100) / 100;
+    const out = [];
+    for (const d of dates) {
+      const f = window.pfFx(change, d);
+      let tv = 0, ti = 0;
+      for (const t of tickers) {
+        const held = achats.filter((a) => a.ticker === t && a.date <= d);
+        if (!held.length) continue;
+        const l = info.get(t) || {};
+        const dev = l.devise || held[0].devise, cot = l.cotee || dev;
+        const q = held.reduce((s, a) => s + a.quantite, 0);
+        const cost = held.reduce((s, a) => s + a.cout_devise, 0);
+        const costChf = held.reduce((s, a) => s + (a.cout_chf || 0), 0);
+        ti += costChf;
+        let p = px.get(t) && px.get(t).get(d);
+        if (p != null) last.set(t, p);
+        const use = p != null ? p : (last.has(t) ? last.get(t) : (l.manuel ? l.prix : null));
+        if (use == null) { tv += costChf; continue; }
+        const inDev = cot === dev ? use : use * (f[cot] || 1) / (f[dev] || 1);
+        tv += q * inDev * (f[dev] || 1);
+        if (p != null) { const b = held.filter((a) => a.date === d); out.push({symbol: t, date: d, prix: r2(inDev), pct: r2((inDev / (cost / q) - 1) * 100), valeur_chf: r2(q * inDev * (f[dev] || 1)), investi_chf: r2(costChf), achat: b.length ? 1 : 0, achats: b.length ? 'achat de ' + new Intl.NumberFormat('fr-CH', {maximumFractionDigits: 2}).format(b.reduce((s, a) => s + (a.cout_chf || 0), 0)) + ' Fr' : ''}); }
+      }
+      const bought = achats.filter((a) => a.date === d);
+      out.push({symbol: 'TOTAL', date: d, prix: null, pct: r2((tv / ti - 1) * 100), valeur_chf: r2(tv), investi_chf: r2(ti), usdchf: f.usd, eurchf: f.eur, achat: bought.length ? 1 : 0, achats: [...new Set(bought.map((a) => (info.get(a.ticker) || {}).nom || a.nom || a.ticker))].join(', ')});
+    }
+    return out;
+  }
+});
+
+// ---------- projection ----------
+dash.calc('projection', {
+  title: 'Projection',
+  description: "Trois scénarios mois par mois, en francs : normal à +7 % par an, pessimiste et optimiste selon les variations observées depuis tes achats (environ 2 chances sur 3 de finir entre les deux). L'argent ajouté chaque mois est compté dans l'investi.",
+  inputs: ['historique', 'lignes', 'total'],
+  fn: (hist, lignes, total) => {
+    if (!hist || !hist.length || !lignes || !lignes.length || !total || !total.length) return [];
+    const p = dash.params();
+    const H = [6, 12, 36, 60].includes(Number(p.horizon)) ? Number(p.horizon) : 12;
+    const C = isFinite(Number(p.mensuel)) && Number(p.mensuel) >= 0 ? Number(p.mensuel) : 200;
+    const MU = 0.07;
+    const sigmaOf = (vals) => {
+      const r = [];
+      for (let i = 1; i < vals.length; i++) if (vals[i - 1] > 0 && vals[i] > 0) r.push(Math.log(vals[i] / vals[i - 1]));
+      if (r.length < 10) return 0.3;
+      const m = r.reduce((a, b) => a + b, 0) / r.length;
+      const sd = Math.sqrt(r.reduce((a, b) => a + (b - m) * (b - m), 0) / (r.length - 1));
+      return Math.min(1.2, Math.max(0.1, sd * Math.sqrt(252)));
+    };
+    const subjects = [{sujet: 'TOTAL', v0: total[0].valeur_chf, i0: total[0].investi_chf, vals: hist.filter((h) => h.symbol === 'TOTAL').map((h) => 1 + h.pct / 100)}]
+      .concat(lignes.map((l) => ({sujet: l.symbol, v0: l.valeur_chf, i0: l.investi_chf, vals: hist.filter((h) => h.symbol === l.symbol).map((h) => h.prix)})));
+    const out = [];
+    const r2 = (x) => Math.round(x * 100) / 100;
+    for (const s of subjects) {
+      if (s.v0 == null) continue;
+      const sig = sigmaOf(s.vals);
+      const T = H / 12;
+      const rate = (z) => Math.pow(Math.exp(Math.log(1 + MU) + z * sig / Math.sqrt(T)), 1 / 12) - 1;
+      const rp = rate(-1), rn = rate(0), ro = rate(1);
+      let vp = s.v0, vn = s.v0, vo = s.v0, inv = s.i0;
+      for (let m = 0; m <= H; m++) {
+        out.push({sujet: s.sujet, mois: m, pessimiste: r2(vp), normal: r2(vn), optimiste: r2(vo), investi: r2(inv), volatilite: r2(sig * 100)});
+        vp = vp * (1 + rp) + C; vn = vn * (1 + rn) + C; vo = vo * (1 + ro) + C; inv += C;
+      }
+    }
+    return out;
+  }
+});
+
+dash.calc('projection_fin', {
+  title: 'Projection : résultat final',
+  description: "Le dernier mois de chaque projection, converti en euros et en dollars au taux du jour.",
+  inputs: ['projection', 'total'],
+  fn: (proj, total) => {
+    if (!proj || !proj.length || !total || !total.length) return [];
+    const eur = total[0].eurchf, usd = total[0].usdchf;
+    const last = new Map();
+    for (const r of proj) { const p = last.get(r.sujet); if (!p || r.mois > p.mois) last.set(r.sujet, r); }
+    const r2 = (x) => Math.round(x * 100) / 100;
+    const out = [];
+    for (const r of last.values()) {
+      const row = {sujet: r.sujet, mois: r.mois, volatilite: r.volatilite};
+      for (const k of ['pessimiste', 'normal', 'optimiste', 'investi']) { row[k + '_chf'] = r[k]; row[k + '_eur'] = r2(r[k] / eur); row[k + '_usd'] = r2(r[k] / usd); }
+      out.push(row);
+    }
+    return out;
+  }
+});
+
+// ---------- périodes ----------
+dash.calc('periodes', {
+  title: 'Gain ou perte par période',
+  description: "Pour le portefeuille et chaque action : ce que tu as gagné ou perdu depuis la dernière clôture (24 h), l'avant-dernière (48 h), 7 jours, 1 mois et depuis le début. L'argent ajouté pendant la période n'est pas compté comme un gain : gain = valeur maintenant − valeur au début de la période − argent ajouté.",
+  inputs: ['historique', 'lignes', 'total'],
+  fn: (hist, lignes, total) => {
+    if (!hist || !hist.length || !lignes || !lignes.length || !total || !total.length) return [];
+    const eur = total[0].eurchf, usd = total[0].usdchf;
+    const ago = (n) => { const d = new Date(); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
+    const P = [['1j', 1], ['2j', 2], ['7j', 7], ['1m', 30], ['tout', null]];
+    const today = new Date().toISOString().slice(0, 10);
+    const r2 = (x) => Math.round(x * 100) / 100;
+    const subj = [{symbol: 'TOTAL', v: total[0].valeur_chf, i: total[0].investi_chf, manuel: 0}].concat(lignes.map((l) => ({symbol: l.symbol, v: l.valeur_chf, i: l.investi_chf, manuel: l.manuel})));
+    const first = hist.reduce((m, h) => (h.date < m ? h.date : m), '9999');
+    return subj.map((s) => {
+      const rows = hist.filter((h) => h.symbol === s.symbol).sort((a, b) => (a.date < b.date ? -1 : 1));
+      const out = {symbol: s.symbol};
+      for (const [key, n] of P) {
+        let vs = 0, is = 0, depuis = first;
+        if (n != null) {
+          let st = null, lim;
+          if (n <= 2) {
+            // 24 h = depuis la dernière clôture, 48 h = depuis l'avant-dernière (jours de bourse)
+            const past = rows.filter((r) => r.date < today);
+            st = past.length >= n ? past[past.length - n] : null;
+            lim = st ? st.date : ago(n);
+          } else {
+            lim = ago(n);
+            for (const r of rows) { if (r.date <= lim) st = r; else break; }
+          }
+          depuis = lim;
+          if (st) { vs = st.valeur_chf; is = st.investi_chf; depuis = st.date; }
+          else if (s.manuel && s.symbol !== 'TOTAL') { vs = s.v; is = s.i; }
+        }
+        const added = s.i - is;
+        const gain = s.v - vs - added;
+        const base = vs + added;
+        out['depuis_' + key] = depuis;
+        out['gain_' + key + '_chf'] = r2(gain); out['gain_' + key + '_eur'] = r2(gain / eur); out['gain_' + key + '_usd'] = r2(gain / usd);
+        out['pct_' + key] = base > 0 ? r2((gain / base) * 100) : 0;
+      }
+      return out;
+    });
+  }
+});
+
+// ---------- state ----------
+window.pfState = window.pfState || {cur: 'CHF', sel: null, proj: 'TOTAL', per: '1j'};
+if (!window.pfState.per) window.pfState.per = '1j';
+if (!window.pfState.proj) window.pfState.proj = 'TOTAL';
+if (!window.pfState.cur) window.pfState.cur = 'CHF';
+window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart'].forEach((n) => dash.draw(n)); };
+window.pfPerTxt = {'1j': '24 h', '2j': '48 h', '7j': '7 jours', '1m': '1 mois', 'tout': 'le début'};
+document.querySelectorAll('.pf-per-btn').forEach((b) => b.addEventListener('click', () => {
+  window.pfState.per = b.getAttribute('data-per');
+  document.querySelectorAll('.pf-per-btn').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+  window.pfRedraw();
+}));
+window.pfShowTab = function (id) {
+  document.querySelectorAll('.pf-tab').forEach((t) => t.setAttribute('aria-selected', t.getAttribute('data-tab') === id ? 'true' : 'false'));
+  document.querySelectorAll('#vue, #projection').forEach((p) => { p.hidden = p.id !== id; });
+  dash.setLink(id);
+};
+document.querySelectorAll('.pf-tab').forEach((t) => t.addEventListener('click', () => window.pfShowTab(t.getAttribute('data-tab'))));
+if (location.hash === '#projection') window.pfShowTab('projection');
+(function () {
+  const p = dash.params();
+  document.querySelectorAll('#proj-horizon').forEach((s) => { if (p.horizon) s.value = String(p.horizon); s.addEventListener('change', () => dash.setParams({horizon: Number(s.value)})); });
+  document.querySelectorAll('#proj-mensuel').forEach((i) => {
+    if (p.mensuel != null) i.value = String(p.mensuel);
+    i.addEventListener('change', () => { const n = Number(i.value); if (isFinite(n) && n >= 0) dash.setParams({mensuel: Math.round(n)}); });
+  });
+})();
+document.querySelectorAll('.pf-cur-btn').forEach((b) => {
+  b.addEventListener('click', () => {
+    window.pfState.cur = b.getAttribute('data-cur');
+    document.querySelectorAll('.pf-cur-btn').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+    window.pfRedraw();
+  });
+});
+document.querySelectorAll('#retour').forEach((b) => {
+  b.addEventListener('click', () => { window.pfState.sel = null; b.hidden = true; window.pfRedraw(); });
+});
+window.pfSelect = function (sym) {
+  window.pfState.sel = sym;
+  window.pfState.proj = sym || 'TOTAL';
+  document.querySelectorAll('#retour').forEach((b) => { b.hidden = !sym; });
+  window.pfRedraw();
+  const c = document.getElementById('courbe');
+  if (c && sym) c.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'});
+};
+</script>
+
+<script>
+// ---------- formatting helpers ----------
+window.pfFmt = {
+  sym: {CHF: 'Fr', EUR: '€', USD: '$'},
+  key: {CHF: 'chf', EUR: 'eur', USD: 'usd'},
+  money(v, cur, signed) {
+    const s = new Intl.NumberFormat('fr-CH', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(Math.abs(v));
+    const sign = signed ? (v >= 0 ? '+' : '−') : (v < 0 ? '−' : '');
+    return sign + s + ' ' + this.sym[cur];
+  },
+  pct(v) { return (v >= 0 ? '+' : '−') + new Intl.NumberFormat('fr-CH', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(Math.abs(v)) + ' %'; },
+  date(d) { if (!d) return ''; const [y, m, j] = d.split('-'); return j + '.' + m + '.' + y; },
+  span(text, src, field, where, cls) {
+    const s = document.createElement('span');
+    s.textContent = text; s.setAttribute('data-source', src); s.setAttribute('data-field', field);
+    if (where != null) { if (typeof where === 'number') s.setAttribute('data-row', String(where)); else s.setAttribute('data-where', where); }
+    if (cls) s.className = cls;
+    return s;
+  }
+};
+window.pfMoneyCell = function (row, base) { const cur = window.pfState.cur; return {v: row[base + '_' + window.pfFmt.key[cur]], field: base + '_' + window.pfFmt.key[cur], cur}; };
+
+function pfTotalTile(base, signed, withClass) {
+  return (el) => {
+    const t = dash.data('total');
+    if (t.status !== 'ok' || !t.data || !t.data.length) { el.textContent = '—'; if (t.status === 'loading') el.classList.add('dash-skeleton'); else el.classList.remove('dash-skeleton'); return; }
+    el.classList.remove('dash-skeleton');
+    const m = window.pfMoneyCell(t.data[0], base);
+    const cls = withClass ? (m.v >= 0 ? 'pf-up' : 'pf-down') : '';
+    el.replaceChildren(window.pfFmt.span(window.pfFmt.money(m.v, m.cur, signed), 'total', m.field, 0, cls));
+  };
+}
+dash.draw('t-valeur', pfTotalTile('valeur', false, false));
+dash.draw('t-gain', pfTotalTile('gain', true, true));
+dash.draw('t-investi', pfTotalTile('investi', false, false));
+window.pfPerRow = function (sym) {
+  const p = dash.data('periodes');
+  return p.status === 'ok' && p.data ? p.data.find((r) => r.symbol === sym) : null;
+};
+dash.draw('t-per-lab', (el) => {
+  const per = window.pfState.per;
+  el.textContent = per === 'tout' ? 'Depuis le début' : 'Depuis ' + window.pfPerTxt[per];
+});
+dash.draw('t-per', (el) => {
+  const r = window.pfPerRow('TOTAL');
+  if (!r) { el.textContent = '—'; return; }
+  const F = window.pfFmt, cur = window.pfState.cur, per = window.pfState.per;
+  const f = 'gain_' + per + '_' + F.key[cur];
+  el.replaceChildren(F.span(F.money(r[f], cur, true), 'periodes', f, 'symbol=TOTAL', r[f] >= 0 ? 'pf-up' : 'pf-down'));
+});
+dash.draw('t-per-sub', (el) => {
+  const r = window.pfPerRow('TOTAL');
+  if (!r) { el.textContent = '—'; return; }
+  const F = window.pfFmt, per = window.pfState.per;
+  const d = r['depuis_' + per];
+  el.replaceChildren(F.span(F.pct(r['pct_' + per]), 'periodes', 'pct_' + per, 'symbol=TOTAL', r['pct_' + per] >= 0 ? 'pf-up' : 'pf-down'),
+    document.createTextNode(d ? ' · depuis la clôture du ' + window.pfLongDate(d3.utcParse('%Y-%m-%d')(d)) : ''));
+});
+
+dash.draw('t-gainpct', (el) => {
+  const t = dash.data('total');
+  if (t.status !== 'ok' || !t.data || !t.data.length) { el.textContent = '—'; return; }
+  const r = t.data[0];
+  el.replaceChildren(window.pfFmt.span(window.pfFmt.pct(r.pct), 'total', 'pct', 0, r.pct >= 0 ? 'pf-up' : 'pf-down'), document.createTextNode(' sur ce que tu as investi'));
+});
+
+window.pfMarche = function () {
+  const m = dash.data('marche_gs');
+  if (m.status !== 'ok' || !m.data || !m.data.length) return null;
+  const by = (t) => m.data.find((r) => r.ticker === t) || null;
+  const sp = by('INDEXSP:.INX'), nd = by('INDEXNASDAQ:NDX'), smi = by('INDEXSWX:SMI'), vix = by('INDEXCBOE:VIX');
+  const dd = Math.min(sp && sp.ecart != null ? sp.ecart : 0, nd && nd.ecart != null ? nd.ecart : 0);
+  const ddScore = dd > -5 ? 0 : dd > -10 ? 1 : dd > -20 ? 2 : 3;
+  const vixScore = !vix || vix.niveau == null ? 0 : vix.niveau < 20 ? 0 : vix.niveau < 30 ? 1 : 2;
+  return {sp, nd, smi, vix, sev: Math.max(ddScore, vixScore)};
+};
+dash.draw('marche-chip', (el) => {
+  const k = window.pfMarche();
+  if (!k) { el.replaceChildren(); return; }
+  const L = [['Marché calme', 'ok'], ['Marché un peu agité', 'warn'], ['Période difficile', 'bad'], ['Marché en forte baisse', 'bad']][k.sev];
+  const c = document.createElement('span'); c.className = 'pf-chip pf-chip-' + L[1]; c.textContent = L[0];
+  el.replaceChildren(c);
+});
+dash.draw('marche-phrase', (el) => {
+  const k = window.pfMarche();
+  if (!k) { el.textContent = '—'; return; }
+  const F = window.pfFmt;
+  const b = (txt, r, field) => { const s = F.span(txt, 'marche_gs', field, 'ticker=' + encodeURIComponent(r.ticker)); const x = document.createElement('b'); x.append(s); return x; };
+  const pct = (v) => F.pct(v);
+  const desc = (r) => r.ecart > -2 ? 'tout près de son plus haut' : r.ecart > -5 ? 'un peu sous son plus haut' : r.ecart > -10 ? 'en recul' : r.ecart > -20 ? 'en correction' : 'en forte baisse';
+  const parts = [];
+  const add = (r, name) => { if (!r || r.ecart == null) return; parts.push(document.createTextNode(name + ' ' + desc(r) + ' (')); parts.push(b(pct(r.ecart), r, 'ecart')); parts.push(document.createTextNode(' depuis son plus haut sur 1 an, ')); parts.push(b(pct(r.jour), r, 'jour')); parts.push(document.createTextNode(" aujourd'hui). ")); };
+  add(k.sp, 'Bourse américaine (S&P 500) :');
+  add(k.nd, 'Tech américaine (Nasdaq 100) :');
+  add(k.smi, 'Bourse suisse (SMI) :');
+  if (k.vix && k.vix.niveau != null) {
+    const v = k.vix.niveau;
+    parts.push(document.createTextNode('Indice de la peur (VIX) : '));
+    parts.push(b(new Intl.NumberFormat('fr-CH', {maximumFractionDigits: 1}).format(v), k.vix, 'niveau'));
+    parts.push(document.createTextNode(v < 15 ? ', les investisseurs sont sereins.' : v < 20 ? ', nervosité normale.' : v < 30 ? ', les investisseurs sont nerveux.' : ', les investisseurs ont peur.'));
+  }
+  el.replaceChildren(...parts);
+});
+
+dash.draw('t-date', (el) => {
+  const t = dash.data('total');
+  if (t.status !== 'ok' || !t.data || !t.data.length) { el.textContent = '—'; return; }
+  const r = t.data[0];
+  const cur = window.pfState.cur;
+  let fxTxt = '';
+  if (cur === 'EUR') fxTxt = ' · 1 € = ' + r.eurchf.toFixed(4).replace('.', ',') + ' Fr';
+  else if (cur === 'USD') fxTxt = ' · 1 $ = ' + r.usdchf.toFixed(4).replace('.', ',') + ' Fr';
+  el.replaceChildren(document.createTextNode('Cours Google Finance, mis à jour à l\'ouverture' + fxTxt));
+});
+
+dash.draw('phrase', (el) => {
+  const t = dash.data('total'), l = dash.data('lignes');
+  if (t.status !== 'ok' || !t.data || !t.data.length || l.status !== 'ok' || !l.data) { el.textContent = '—'; return; }
+  const r = t.data[0];
+  const cur = window.pfState.cur;
+  const k = window.pfFmt.key[cur];
+  const live = l.data.filter((x) => x.pct != null);
+  const best = live.reduce((a, b) => (b.pct > a.pct ? b : a));
+  const worst = live.reduce((a, b) => (b.pct < a.pct ? b : a));
+  const F = window.pfFmt;
+  const b = (text, src, field, where, cls) => { const s = F.span(text, src, field, where, cls); const w = document.createElement('b'); w.append(s); return w; };
+  el.replaceChildren(
+    document.createTextNode('Ton portefeuille vaut '), b(F.money(r['valeur_' + k], cur), 'total', 'valeur_' + k, 0),
+    document.createTextNode(r.gain_chf >= 0 ? ', tu es en gain de ' : ', tu es en perte de '),
+    b(F.money(Math.abs(r['gain_' + k]), cur), 'total', 'gain_' + k, 0, r.gain_chf >= 0 ? 'pf-up' : 'pf-down'),
+    document.createTextNode('. Meilleure action : ' + best.nom + ' ('), b(F.pct(best.pct), 'lignes', 'pct', 'symbol=' + encodeURIComponent(best.symbol)),
+    document.createTextNode('), la pire : ' + worst.nom + ' ('), b(F.pct(worst.pct), 'lignes', 'pct', 'symbol=' + encodeURIComponent(worst.symbol)),
+    document.createTextNode(').'));
+});
+</script>
+
+<script>
+// ---------- detail header ----------
+dash.draw('detail-titre', (el) => {
+  const sel = window.pfState.sel;
+  if (!sel) { el.textContent = 'Mon portefeuille au fil des jours'; return; }
+  const l = dash.data('lignes');
+  const row = l.status === 'ok' && l.data ? l.data.find((x) => x.symbol === sel) : null;
+  el.textContent = row ? row.nom : sel;
+});
+dash.draw('detail-sous', (el) => {
+  const sel = window.pfState.sel;
+  const F = window.pfFmt;
+  if (!sel) { el.textContent = "Ce que vaut ton portefeuille chaque jour, comparé à l'argent que tu as mis. Vert : tu gagnes. Rouge : tu perds. Passe la souris sur la courbe pour voir un jour précis."; return; }
+  const l = dash.data('lignes');
+  const row = l.status === 'ok' && l.data ? l.data.find((x) => x.symbol === sel) : null;
+  if (!row) { el.textContent = '—'; return; }
+  const w = 'symbol=' + encodeURIComponent(sel);
+  if (row.prix == null) { el.textContent = "Pas de cours reçu pour cette action pour l'instant."; return; }
+  const m = window.pfMoneyCell(row, 'valeur');
+  el.replaceChildren(
+    document.createTextNode('% par rapport à ton prix moyen ('), F.span(row.prix_moyen.toFixed(2).replace('.', ',') + ' ' + (F.sym[row.devise] || row.devise), 'lignes', 'prix_moyen', w),
+    document.createTextNode('). Aujourd\'hui '), F.span(row.prix.toFixed(2).replace('.', ',') + ' ' + (F.sym[row.devise] || row.devise), 'lignes', 'prix', w),
+    document.createTextNode(', soit '), F.span(F.pct(row.pct), 'lignes', 'pct', w, row.pct >= 0 ? 'pf-up' : 'pf-down'),
+    document.createTextNode(' · ta ligne vaut '), F.span(F.money(m.v, m.cur), 'lignes', m.field, w), document.createTextNode('. Les points sont tes achats.'));
+});
+
+// ---------- chart ----------
+window.pfFr = d3.timeFormatLocale({dateTime: '%A %e %B %Y à %X', date: '%d.%m.%Y', time: '%H:%M:%S', periods: ['', ''],
+  days: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'], shortDays: ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'],
+  months: ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
+  shortMonths: ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']});
+window.pfLongDate = window.pfFr.utcFormat('%-d %B %Y');
+
+// draws value vs invested with the gap shaded green (gain) or red (loss)
+window.pfGapChart = function (el, series, opts) {
+  const F = window.pfFmt, cur = window.pfState.cur;
+  const W = Math.max(280, el.clientWidth || 600), H = 320;
+  const parse = d3.utcParse('%Y-%m-%d');
+  series = series.map((s) => Object.assign({}, s, {d: s.dt || parse(s.date)}));
+  const hourFmt = window.pfFr.utcFormat('%-d %B, %H h %M');
+  const y = d3.scaleLinear().domain(d3.extent(series.flatMap((s) => [s.v, s.inv]))).nice(5);
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`)
+    .attr('role', 'img').attr('aria-label', opts.label);
+  const probe = svg.append('g'); let ml = 0;
+  const yTick = (v) => new Intl.NumberFormat('fr-CH', {maximumFractionDigits: 0}).format(v) + ' ' + F.sym[cur];
+  y.ticks(5).forEach((t) => { ml = Math.max(ml, probe.append('text').text(yTick(t)).node().getComputedTextLength()); });
+  probe.remove();
+  const m = {t: 10, r: 18, b: 28, l: Math.ceil(ml) + 10};
+  const x = d3.scaleUtc().domain(d3.extent(series, (s) => s.d)).range([m.l, W - m.r]);
+  y.range([H - m.b, m.t]);
+  svg.append('g').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - m.l - m.r)).tickFormat(yTick)).call((g) => g.selectAll('.tick text').attr('x', -6));
+  const nT = Math.max(2, Math.floor((W - m.l - m.r) / 150));
+  const xAxis = svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(nT).tickSize(0).tickPadding(8).tickFormat(opts.intraday ? window.pfFr.utcFormat('%-d %b, %H h') : window.pfLongDate));
+  xAxis.selectAll('.tick text').each(function () { const bb = this.getBBox(); const tx = this.parentNode.transform.baseVal.consolidate(); const cx = tx ? tx.matrix.e : 0; if (cx + bb.x < 0 || cx + bb.x + bb.width > W) this.remove(); });
+  const uid = 'pf' + Math.random().toString(36).slice(2, 8);
+  const defs = svg.append('defs');
+  defs.append('clipPath').attr('id', uid + 'a').append('path').datum(series).attr('d', d3.area().x((s) => x(s.d)).y0(0).y1((s) => y(s.inv)));
+  defs.append('clipPath').attr('id', uid + 'b').append('path').datum(series).attr('d', d3.area().x((s) => x(s.d)).y0(H).y1((s) => y(s.inv)));
+  const band = d3.area().x((s) => x(s.d)).y0((s) => y(s.inv)).y1((s) => y(s.v));
+  svg.append('path').datum(series).attr('d', band).attr('clip-path', `url(#${uid}a)`).style('fill', 'var(--color-ok)').style('opacity', 0.18);
+  svg.append('path').datum(series).attr('d', band).attr('clip-path', `url(#${uid}b)`).style('fill', 'var(--color-bad)').style('opacity', 0.18);
+  svg.append('path').datum(series).attr('fill', 'none').style('stroke', 'var(--color-fg-muted)').style('stroke-width', 1.5).style('stroke-dasharray', '5 4')
+    .attr('d', d3.line().curve(d3.curveStepAfter).x((s) => x(s.d)).y((s) => y(s.inv)));
+  svg.append('path').datum(series).attr('fill', 'none').style('stroke', 'var(--pf-accent)').style('stroke-width', 2).style('stroke-linejoin', 'round').style('stroke-linecap', 'round')
+    .attr('d', d3.line().x((s) => x(s.d)).y((s) => y(s.v)));
+  const buys = series.filter((s) => s.achat);
+  svg.selectAll('line.buy').data(buys).join('line').attr('class', 'buy').attr('x1', (s) => x(s.d)).attr('x2', (s) => x(s.d)).attr('y1', (s) => y(s.v)).attr('y2', H - m.b)
+    .style('stroke', 'var(--color-fg-muted)').style('stroke-width', 1).style('stroke-dasharray', '2 3').style('opacity', 0.6);
+  svg.selectAll('circle.buy').data(buys).join('circle').attr('class', 'buy').attr('cx', (s) => x(s.d)).attr('cy', (s) => y(s.v)).attr('r', 6)
+    .style('fill', 'var(--color-panel)').style('stroke', 'var(--pf-accent)').style('stroke-width', 3);
+  const ls = series[series.length - 1];
+  svg.append('circle').attr('cx', x(ls.d)).attr('cy', y(ls.v)).attr('r', 4.5).style('fill', 'var(--pf-accent)').style('stroke', 'var(--color-panel)').style('stroke-width', 2);
+
+  const lg = document.createElement('div'); lg.className = 'pf-legend';
+  const key = (color, dashd, text) => { const k = document.createElement('span'); const s = document.createElement('span'); s.className = 'pf-key'; s.style.borderTopColor = color; if (dashd) s.style.borderTopStyle = 'dashed'; k.append(s, document.createTextNode(text)); return k; };
+  const sw = (color, text) => { const k = document.createElement('span'); const s = document.createElement('span'); s.className = 'pf-scen-key'; s.style.background = color; s.style.opacity = '0.45'; s.style.borderRadius = '2px'; k.append(s, document.createTextNode(text)); return k; };
+  const ring = () => { const k = document.createElement('span'); const s = document.createElement('span'); s.className = 'pf-scen-key'; s.style.background = 'var(--color-panel)'; s.style.border = '3px solid ' + 'var(--pf-accent)'; s.style.width = '8px'; s.style.height = '8px'; k.append(s, document.createTextNode('Achat')); return k; };
+  lg.append(key('var(--pf-accent)', false, opts.valueLabel), key('var(--color-fg-muted)', true, 'Argent investi'), ring(), sw('var(--color-ok)', 'En gain'), sw('var(--color-bad)', 'En perte'));
+  el.append(lg);
+
+  const tip = document.createElement('div'); tip.className = 'pf-tip'; tip.hidden = true; el.append(tip);
+  const dot = svg.append('circle').attr('r', 4).style('fill', 'var(--color-fg)').style('display', 'none');
+  const bis = d3.bisector((s) => s.d).center;
+  const show = (ev) => {
+      const [px] = d3.pointer(ev, svg.node());
+      const s = series[bis(series, x.invert(px))];
+      dot.style('display', null).attr('cx', x(s.d)).attr('cy', y(s.v));
+      const g = s.v - s.inv;
+      const l1 = document.createElement('div'); l1.className = 'pf-tip-d'; l1.textContent = s.now ? 'Maintenant' : s.close ? 'Clôture du ' + window.pfLongDate(s.d) : opts.intraday ? hourFmt(s.d) : window.pfLongDate(s.d);
+      const l0 = document.createElement('div'); l0.style.fontWeight = '600'; l0.textContent = s.achat ? 'Achat : ' + (s.achats || 'oui') : '';
+      const l2 = document.createElement('div'); l2.textContent = opts.valueLabel + ' : ' + F.money(s.v, cur);
+      const l3 = document.createElement('div'); l3.textContent = 'Investi : ' + F.money(s.inv, cur);
+      const l4 = document.createElement('div'); l4.className = g >= 0 ? 'pf-up' : 'pf-down'; l4.textContent = (g >= 0 ? 'Gain : ' : 'Perte : ') + F.money(g, cur, true) + ' (' + F.pct(s.inv ? (g / s.inv) * 100 : 0) + ')';
+      tip.replaceChildren(...[l1, s.achat ? l0 : null, l2, l3, l4].filter(Boolean)); tip.hidden = false;
+      const bw = el.clientWidth, tw = tip.offsetWidth, sx = (x(s.d) / W) * bw;
+      tip.style.left = Math.min(Math.max(0, sx - tw / 2), bw - tw) + 'px';
+      tip.style.top = Math.max(0, (y(s.v) / H) * el.querySelector('svg').getBoundingClientRect().height - 110) + 'px';
+  };
+  svg.append('rect').attr('x', m.l).attr('y', 0).attr('width', W - m.l - m.r).attr('height', H).style('fill', 'transparent').style('touch-action', 'pan-y').style('cursor', 'crosshair')
+    .on('pointerdown', show).on('pointermove', show)
+    .on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') { tip.hidden = true; dot.style('display', 'none'); } });
+};
+
+dash.draw('chart', (el) => {
+  const h = dash.data('historique');
+  el.replaceChildren();
+  if (h.status !== 'ok' || !h.data) {
+    const p = document.createElement('div');
+    if (h.status === 'error') { p.className = 'pf-fail'; p.textContent = 'Les cours ne se sont pas chargés.'; } else { p.className = 'dash-skeleton'; p.style.height = '280px'; }
+    el.append(p); return;
+  }
+  const sel = window.pfState.sel, cur = window.pfState.cur;
+  const fxBy = new Map(h.data.filter((r) => r.symbol === 'TOTAL').map((r) => [r.date, r]));
+  const conv = (date, v) => { const f = fxBy.get(date); if (!f || cur === 'CHF') return v; return cur === 'EUR' ? v / f.eurchf : v / f.usdchf; };
+  const pr = window.pfPerRow(sel || 'TOTAL');
+  const depuis = pr ? pr['depuis_' + window.pfState.per] : null;
+  const rows = h.data.filter((r) => r.symbol === (sel || 'TOTAL') && (!depuis || r.date >= depuis));
+  const series = rows.map((r) => ({date: r.date, v: conv(r.date, r.valeur_chf), inv: conv(r.date, r.investi_chf), achat: r.achat, achats: r.achats || ''}));
+  // point « maintenant » avec les cours du moment
+  const live = sel ? (dash.data('lignes').data || []).find((x) => x.symbol === sel) : (dash.data('total').data || [])[0];
+  const tt = (dash.data('total').data || [])[0];
+  if (live && tt && live.valeur_chf != null) {
+    const today = new Date().toISOString().slice(0, 10);
+    const rate = cur === 'CHF' ? 1 : cur === 'EUR' ? tt.eurchf : tt.usdchf;
+    while (series.length && series[series.length - 1].date >= today) series.pop();
+    series.push({date: today, v: live.valeur_chf / rate, inv: live.investi_chf / rate, achat: 0, now: 1});
+  }
+  // 24 h / 48 h : un point par heure grâce aux relevés horaires
+  const per = window.pfState.per;
+  let intraday = false, ser = series;
+  if ((per === '1j' || per === '2j') && depuis) {
+    const su = dash.data('suivi_gs');
+    const nowD = new Date();
+    const naive = (d) => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes()));
+    const pts = (su.status === 'ok' && su.data ? su.data : []).filter((r) => r.symbol === (sel || 'TOTAL') && r.ts.slice(0, 10) > depuis);
+    const tt2 = (dash.data('total').data || [])[0];
+    const rate = cur === 'CHF' ? 1 : tt2 ? (cur === 'EUR' ? tt2.eurchf : tt2.usdchf) : 1;
+    const startRow = rows.find((r) => r.date === depuis);
+    ser = [];
+    if (startRow) ser.push({dt: new Date(Date.UTC(+depuis.slice(0, 4), +depuis.slice(5, 7) - 1, +depuis.slice(8, 10), 22, 0)), v: conv(depuis, startRow.valeur_chf), inv: conv(depuis, startRow.investi_chf), achat: 0, close: 1});
+    for (const p of pts) ser.push({dt: d3.utcParse('%Y-%m-%d %H:%M')(p.ts), v: p.valeur_chf / rate, inv: p.investi_chf / rate, achat: 0});
+    const nowPt = series.find((s) => s.now);
+    if (nowPt) ser.push(Object.assign({}, nowPt, {dt: naive(nowD)}));
+    ser = ser.filter((s) => s.dt).sort((a, b) => a.dt - b.dt);
+    intraday = true;
+  }
+  if (ser.length < 2) { const p = document.createElement('div'); p.className = 'pf-fail'; p.textContent = sel ? 'Pas assez de cours pour tracer cette action.' : 'Pas encore de données.'; el.append(p); return; }
+  window.pfGapChart(el, ser, {intraday, label: sel ? "Valeur de l'action comparée à l'argent investi" : "Valeur du portefeuille comparée à l'argent investi", valueLabel: sel ? 'Valeur de ta ligne' : 'Valeur du portefeuille'});
+});
+
+// ---------- table ----------
+dash.draw('table', (el) => {
+  const l = dash.data('lignes');
+  if (l.status !== 'ok' || !l.data) {
+    el.replaceChildren();
+    const p = document.createElement('div'); p.className = l.status === 'error' ? 'pf-fail' : 'dash-skeleton'; if (l.status === 'error') p.textContent = 'Les lignes ne se sont pas chargées.'; else p.style.height = '200px';
+    el.append(p); return;
+  }
+  const cur = window.pfState.cur, k = window.pfFmt.key[cur], F = window.pfFmt;
+  const tbl = document.createElement('table'); tbl.className = 'pf-table';
+  tbl.setAttribute('data-source', 'lignes'); tbl.setAttribute('data-row-key', 'symbol');
+  const thead = document.createElement('thead'); const hr = document.createElement('tr');
+  [['Action', 'nom'], ['Valeur', 'valeur_' + k], ['%', 'pct'], ['Gain total', 'gain_' + k]].forEach(([t, f]) => { const th = document.createElement('th'); th.textContent = t; th.setAttribute('data-field', f); hr.append(th); });
+  const per = window.pfState.per, pl = per === 'tout' ? 'depuis le début' : 'depuis ' + window.pfPerTxt[per];
+  [['Gain ' + pl, 'gain_' + per + '_' + k], ['% ' + pl, 'pct_' + per]].forEach(([t, f]) => { const th = document.createElement('th'); th.textContent = t; th.setAttribute('data-field', f); th.setAttribute('data-source', 'periodes'); hr.append(th); });
+  const perData = dash.data('periodes'); const perBy = new Map((perData.status === 'ok' && perData.data ? perData.data : []).map((x) => [x.symbol, x]));
+  thead.append(hr);
+  const tb = document.createElement('tbody');
+  for (const r of l.data) {
+    const tr = document.createElement('tr'); tr.className = 'pf-row' + (window.pfState.sel === r.symbol ? ' is-sel' : '');
+    tr.setAttribute('data-key', encodeURIComponent(r.symbol)); tr.tabIndex = 0; tr.setAttribute('role', 'button');
+    const c1 = document.createElement('td'); c1.textContent = r.nom;
+    if (r.manuel) { const tg = document.createElement('span'); tg.className = 'pf-tag'; tg.textContent = 'prix manuel'; c1.append(tg); }
+    const c2 = document.createElement('td'); c2.textContent = r['valeur_' + k] == null ? '—' : F.money(r['valeur_' + k], cur);
+    const c3 = document.createElement('td'); c3.textContent = r.pct == null ? '—' : F.pct(r.pct); if (r.pct != null) c3.className = r.pct >= 0 ? 'pf-up' : 'pf-down';
+    const c4 = document.createElement('td'); c4.textContent = r['gain_' + k] == null ? '—' : F.money(r['gain_' + k], cur, true); if (r.gain_chf != null) c4.className = r.gain_chf >= 0 ? 'pf-up' : 'pf-down';
+    const pp = perBy.get(r.symbol);
+    const gv = pp ? pp['gain_' + per + '_' + k] : null, pv = pp ? pp['pct_' + per] : null;
+    const c5 = document.createElement('td'); c5.textContent = gv == null ? '—' : F.money(gv, cur, true); if (gv != null) c5.className = gv >= 0 ? 'pf-up' : 'pf-down';
+    const c6 = document.createElement('td'); c6.textContent = pv == null ? '—' : F.pct(pv); if (pv != null) c6.className = pv >= 0 ? 'pf-up' : 'pf-down';
+    tr.append(c1, c2, c3, c4, c5, c6);
+    const go = () => window.pfSelect(window.pfState.sel === r.symbol ? null : r.symbol);
+    tr.addEventListener('click', go);
+    tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+    tb.append(tr);
+  }
+  tbl.append(thead, tb);
+  el.replaceChildren(tbl);
+});
+</script>
+
+<script>
+// ---------- projection : affichage ----------
+window.pfHorizonTxt = {6: '6 mois', 12: '1 an', 36: '3 ans', 60: '5 ans'};
+window.pfProjRow = function () {
+  const pf = dash.data('projection_fin');
+  if (pf.status !== 'ok' || !pf.data) return null;
+  return pf.data.find((r) => r.sujet === (window.pfState.proj || 'TOTAL')) || pf.data.find((r) => r.sujet === 'TOTAL') || null;
+};
+window.pfProjName = function () {
+  const s = window.pfState.proj || 'TOTAL';
+  if (s === 'TOTAL') return null;
+  const l = dash.data('lignes');
+  const row = l.status === 'ok' && l.data ? l.data.find((x) => x.symbol === s) : null;
+  return row ? row.nom : s;
+};
+
+dash.draw('proj-sujet', (sel) => {
+  const l = dash.data('lignes');
+  const opts = [new Option('Tout le portefeuille', 'TOTAL')];
+  if (l.status === 'ok' && l.data) for (const r of l.data) opts.push(new Option(r.nom, r.symbol));
+  sel.replaceChildren(...opts);
+  sel.value = window.pfState.proj || 'TOTAL';
+  sel.onchange = () => { window.pfState.proj = sel.value; ['proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart'].forEach((n) => dash.draw(n)); };
+});
+
+dash.draw('proj-titre', (el) => {
+  const n = window.pfProjName();
+  const H = window.pfHorizonTxt[Number(dash.params().horizon)] || '1 an';
+  el.textContent = (n ? n : 'Tout le portefeuille') + ' dans ' + H;
+});
+
+dash.draw('proj-phrase', (el) => {
+  const r = window.pfProjRow();
+  if (!r) { el.textContent = '—'; return; }
+  const F = window.pfFmt, cur = window.pfState.cur, k = F.key[cur];
+  const w = 'sujet=' + encodeURIComponent(r.sujet);
+  const p = dash.params();
+  const C = isFinite(Number(p.mensuel)) ? Number(p.mensuel) : 200;
+  const H = window.pfHorizonTxt[r.mois] || (r.mois + ' mois');
+  const n = window.pfProjName();
+  const b = (txt, field) => { const s = F.span(txt, 'projection_fin', field, w); const x = document.createElement('b'); x.append(s); return x; };
+  el.replaceChildren(
+    document.createTextNode((C > 0 ? 'Si tu ajoutes ' + new Intl.NumberFormat('fr-CH').format(C) + ' Fr par mois, ' : 'Sans rien ajouter, ') + 'dans ' + H + ' ' + (n ? 'ta ligne ' + n : 'ton portefeuille') + ' vaudrait environ '),
+    b(F.money(r['normal_' + k], cur), 'normal_' + k),
+    document.createTextNode(' dans le scénario normal, entre '), b(F.money(r['pessimiste_' + k], cur), 'pessimiste_' + k),
+    document.createTextNode(' et '), b(F.money(r['optimiste_' + k], cur), 'optimiste_' + k),
+    document.createTextNode(' selon les marchés. Tu aurais mis '), b(F.money(r['investi_' + k], cur), 'investi_' + k),
+    document.createTextNode(' au total.'));
+});
+
+dash.draw('proj-tuiles', (el) => {
+  const r = window.pfProjRow();
+  if (!r) { el.replaceChildren(); const s = document.createElement('div'); s.className = 'dash-skeleton'; s.style.height = '90px'; el.append(s); return; }
+  const F = window.pfFmt, cur = window.pfState.cur, k = F.key[cur];
+  const w = 'sujet=' + encodeURIComponent(r.sujet);
+  const inv = r['investi_' + k];
+  const tiles = [['Pessimiste', 'pessimiste', 'var(--color-bad)'], ['Normal', 'normal', 'var(--pf-accent)'], ['Optimiste', 'optimiste', 'var(--color-ok)'], ['Argent investi', 'investi', 'var(--color-fg-muted)']];
+  el.replaceChildren(...tiles.map(([lab, key, col]) => {
+    const t = document.createElement('div'); t.className = 'pf-tile';
+    const l = document.createElement('div'); l.className = 'pf-lab'; const dot = document.createElement('span'); dot.className = 'pf-scen-key'; dot.style.background = col; l.append(dot, document.createTextNode(lab));
+    const v = document.createElement('div'); v.className = 'pf-big'; v.append(F.span(F.money(r[key + '_' + k], cur), 'projection_fin', key + '_' + k, w));
+    const s = document.createElement('div'); s.className = 'pf-sub';
+    if (key !== 'investi') { const g = r[key + '_' + k] - inv; s.className = 'pf-sub ' + (g >= 0 ? 'pf-up' : 'pf-down'); s.textContent = (g >= 0 ? 'Gain ' : 'Perte ') + F.money(g, cur, true); }
+    else s.textContent = 'Ce que tu aurais mis';
+    t.append(l, v, s); return t;
+  }));
+});
+
+dash.draw('proj-chart', (el) => {
+  const pr = dash.data('projection'), tt = dash.data('total');
+  el.replaceChildren();
+  if (pr.status !== 'ok' || !pr.data || tt.status !== 'ok' || !tt.data || !tt.data.length) {
+    const p = document.createElement('div'); if (pr.status === 'error') { p.className = 'pf-fail'; p.textContent = 'La projection ne s\'est pas calculée.'; } else { p.className = 'dash-skeleton'; p.style.height = '280px'; }
+    el.append(p); return;
+  }
+  const F = window.pfFmt, cur = window.pfState.cur;
+  const rate = cur === 'CHF' ? 1 : cur === 'EUR' ? tt.data[0].eurchf : tt.data[0].usdchf;
+  const rows = pr.data.filter((r) => r.sujet === (window.pfState.proj || 'TOTAL'));
+  if (rows.length < 2) { const p = document.createElement('div'); p.className = 'pf-fail'; p.textContent = 'Pas de projection pour cette action.'; el.append(p); return; }
+  const now = new Date(); const base = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
+  const S = rows.map((r) => ({d: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + r.mois, 1)), m: r.mois, p: r.pessimiste / rate, n: r.normal / rate, o: r.optimiste / rate, i: r.investi / rate}));
+  const W = Math.max(280, el.clientWidth || 600), H = 320;
+  const y = d3.scaleLinear().domain([Math.min(0, d3.min(S, (s) => Math.min(s.p, s.i))), d3.max(S, (s) => Math.max(s.o, s.i))]).nice(5);
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Projection : trois scénarios et argent investi');
+  const yTick = (v) => new Intl.NumberFormat('fr-CH', {maximumFractionDigits: 0}).format(v) + ' ' + F.sym[cur];
+  const probe = svg.append('g'); let ml = 0; y.ticks(5).forEach((t) => { ml = Math.max(ml, probe.append('text').text(yTick(t)).node().getComputedTextLength()); }); probe.remove();
+  const mg = {t: 10, r: 18, b: 28, l: Math.ceil(ml) + 10};
+  const x = d3.scaleUtc().domain(d3.extent(S, (s) => s.d)).range([mg.l, W - mg.r]);
+  y.range([H - mg.b, mg.t]);
+  const monthFmt = window.pfFr.utcFormat('%B %Y');
+  svg.append('g').attr('transform', `translate(${mg.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - mg.l - mg.r)).tickFormat(yTick)).call((g) => g.selectAll('.tick text').attr('x', -6));
+  const xa = svg.append('g').attr('transform', `translate(0,${H - mg.b})`).call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((W - mg.l - mg.r) / 130))).tickSize(0).tickPadding(8).tickFormat(monthFmt));
+  xa.selectAll('.tick text').each(function () { const bb = this.getBBox(); const tx = this.parentNode.transform.baseVal.consolidate(); const cx = tx ? tx.matrix.e : 0; if (cx + bb.x < 0 || cx + bb.x + bb.width > W) this.remove(); });
+  svg.append('path').datum(S).style('fill', 'var(--pf-accent)').style('opacity', 0.12).attr('d', d3.area().x((s) => x(s.d)).y0((s) => y(s.p)).y1((s) => y(s.o)));
+  const line = (key, color, width, dashed) => svg.append('path').datum(S).attr('fill', 'none').style('stroke', color).style('stroke-width', width).style('stroke-dasharray', dashed ? '5 4' : null).style('stroke-linejoin', 'round').attr('d', d3.line().x((s) => x(s.d)).y((s) => y(s[key])));
+  line('i', 'var(--color-fg-muted)', 1.5, true);
+  line('p', 'var(--color-bad)', 1.5, false);
+  line('o', 'var(--color-ok)', 1.5, false);
+  line('n', 'var(--pf-accent)', 2.5, false);
+  const lg = document.createElement('div'); lg.className = 'pf-legend';
+  [['Optimiste', 'var(--color-ok)', false], ['Normal', 'var(--pf-accent)', false], ['Pessimiste', 'var(--color-bad)', false], ['Argent investi', 'var(--color-fg-muted)', true]].forEach(([t, c, d]) => {
+    const k = document.createElement('span'); const s = document.createElement('span'); s.className = 'pf-key'; s.style.borderTopColor = c; if (d) s.style.borderTopStyle = 'dashed'; k.append(s, document.createTextNode(t)); lg.append(k);
+  });
+  el.append(lg);
+  const tip = document.createElement('div'); tip.className = 'pf-tip'; tip.hidden = true; el.append(tip);
+  const guide = svg.append('line').attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--cds-chart-reference)').style('display', 'none');
+  const bis = d3.bisector((s) => s.d).center;
+  const showP = (ev) => {
+      const [px] = d3.pointer(ev, svg.node()); const s = S[bis(S, x.invert(px))];
+      guide.style('display', null).attr('x1', x(s.d)).attr('x2', x(s.d));
+      const mk = (t, c) => { const d = document.createElement('div'); d.textContent = t; if (c) d.className = c; return d; };
+      tip.replaceChildren(mk(s.m === 0 ? "Aujourd'hui" : monthFmt(s.d) + ' (dans ' + s.m + ' mois)', 'pf-tip-d'), mk('Optimiste : ' + F.money(s.o, cur), 'pf-up'), mk('Normal : ' + F.money(s.n, cur)), mk('Pessimiste : ' + F.money(s.p, cur), 'pf-down'), mk('Investi : ' + F.money(s.i, cur), 'pf-tip-d'));
+      tip.hidden = false;
+      const bw = el.clientWidth, tw = tip.offsetWidth, sx = (x(s.d) / W) * bw;
+      tip.style.left = Math.min(Math.max(0, sx + 12), bw - tw) + 'px'; tip.style.top = '8px';
+  };
+  svg.append('rect').attr('x', mg.l).attr('y', 0).attr('width', W - mg.l - mg.r).attr('height', H).style('fill', 'transparent').style('touch-action', 'pan-y').style('cursor', 'crosshair')
+    .on('pointerdown', showP).on('pointermove', showP)
+    .on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') { tip.hidden = true; guide.style('display', 'none'); } });
+});
+</script>
+
+</div>
+
+<script>
+document.querySelectorAll('#pf-refresh').forEach((b) => b.addEventListener('click', () => window.pfLoad()));
+window.pfLoad();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+
+</body>
+</html>

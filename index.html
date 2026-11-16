@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mon Portefeuille</title>
-<meta name="theme-color" content="#1f4a37">
+<title>John Rockefeller</title>
+<meta name="theme-color" content="#581b29">
 <meta name="color-scheme" content="only light">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192-v2.png">
@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="robots" content="noindex">
 <style>
-  :root { color-scheme: only light; }
+  :root { color-scheme: only light; background: #581b29; }
 :root {
   --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 14px; --cds-gap-lg: 22px; --cds-gap-xl: 32px;
   --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 18px; --cds-radius: 2px;
@@ -21,14 +21,17 @@
   --cds-font-weight-medium: 600; --font-anthropic-serif: Georgia, serif; --font-anthropic-sans: system-ui, sans-serif;
   --cds-dur-slow: 400ms; --cds-ease-out: cubic-bezier(.2,.7,.2,1);
 }
-html, body { margin: 0; height: 100%; background: #f2e8cf; }
+html, body { margin: 0; min-height: 100%; background: #fbf1da; color: #302019; }
 body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
 [hidden] { display: none !important; }
 .dash-skeleton { background: rgba(154,122,53,0.15); border-radius: 2px; animation: pfpulse 1.4s ease-in-out infinite; color: transparent !important; }
 @keyframes pfpulse { 50% { opacity: .55; } }
 .dash-select { font: inherit; font-size: 0.95rem; padding: 6px 28px 6px 10px; border: 1px solid #9a7a35; border-radius: 0; background-color: #f2e8cf; color: #2a2118; }
 .pf-app-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; justify-content: flex-end; }
-#pf-setup { max-width: 520px; margin: 40px auto; padding: 24px; font-family: Georgia, serif; color: #2a2118; background: #f8f1de; border: 6px double #1f4a37; }
+#pf-setup { max-width: 520px; margin: 32px auto; padding: 24px; font-family: Georgia, serif; color: #302019; background: #fff8e8; border: 5px double #976d33; }
+#pf-setup h1 { margin-top: 0; color: #581b29; }
+#pf-setup button { color: #fff8e8; background: #164639; border: 1px solid #164639; }
+@media (max-width: 600px) { #pf-setup { margin: 16px; } }
 #pf-setup form { display: grid; gap: 10px; }
 #pf-setup input, #pf-setup button { font: inherit; padding: 8px; }
 </style>
@@ -137,7 +140,7 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 </head>
 <body>
 <div id="pf-setup" hidden>
-  <h1 style="font-variant: small-caps; color: #1f4a37; margin-top: 0">Mon Portefeuille</h1>
+  <h1>John Rockefeller</h1>
   <p>Ouvre ton lien personnel ou colle-le ici pour afficher ton portefeuille sur ce navigateur.</p>
   <form id="pf-setup-form">
     <label for="pf-setup-link">Lien personnel du portefeuille</label>
@@ -147,11 +150,11 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 </div>
 <div id="dash-root" hidden>
 <style>
-/* Thème « John D. Rockefeller » : certificat d'action Standard Oil des années 1880, papier crème, encre, vert billet, sang-de-bœuf, laiton */
+/* Palette et motifs inspirés du tapis de référence. */
 #dash-root { --dash-gutter: 0; }
 .pf {
-  --pf-paper: #f2e8cf; --pf-paper-2: #f8f1de; --pf-ink: #2a2118; --pf-ink-2: #6b5a43;
-  --pf-green: #1f4a37; --pf-oxblood: #7b2219; --pf-brass: #9a7a35; --pf-brass-soft: rgba(154, 122, 53, 0.45); --pf-brass-faint: rgba(154, 122, 53, 0.16);
+  --pf-paper: #fbf1da; --pf-paper-2: #fff8e8; --pf-ink: #302019; --pf-ink-2: #5e483a;
+  --pf-green: #164639; --pf-oxblood: #581b29; --pf-brass: #976d33; --pf-brass-soft: rgba(154, 122, 53, 0.45); --pf-brass-faint: rgba(154, 122, 53, 0.16);
   --pf-display: 'Baskerville', 'Baskerville Old Face', 'Hoefler Text', 'Libre Baskerville', Garamond, Georgia, 'Times New Roman', serif;
   --pf-text: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
   --color-bg: var(--pf-paper); --color-panel: var(--pf-paper-2); --color-fg: var(--pf-ink); --color-fg-muted: var(--pf-ink-2);
@@ -163,22 +166,13 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
   color-scheme: only light;
   font-family: var(--pf-text) !important;
   background-color: var(--pf-paper);
-  background-image:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 252, 240, 0.7), rgba(255, 252, 240, 0) 60%),
-    repeating-linear-gradient(45deg, rgba(154, 122, 53, 0.035) 0 2px, transparent 2px 7px),
-    repeating-linear-gradient(-45deg, rgba(154, 122, 53, 0.035) 0 2px, transparent 2px 7px);
-  padding-block: 28px 40px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  border: 6px double var(--pf-green);
-  outline: 1px solid var(--pf-brass);
-  outline-offset: -12px;
-  min-height: 100%;
+  box-sizing: border-box;
+  width: min(100%, 1180px);
+  margin-inline: auto;
+  padding: 0 max(14px, env(safe-area-inset-right)) 36px max(14px, env(safe-area-inset-left));
+  border-inline: 5px double var(--pf-brass);
 }
 .pf .pf-title { font-family: var(--pf-display) !important; font-variant: small-caps; letter-spacing: 0.12em; font-size: clamp(1.7rem, 4.6vw, 2.6rem) !important; color: var(--pf-green); font-weight: 400 !important; }
-.pf .pf-title::before { content: '\2766'; display: inline-block; margin-right: 0.4em; color: var(--pf-oxblood); font-size: 0.7em; vertical-align: 0.12em; }
-.pf .pf-title::after { content: ''; display: block; width: min(320px, 70%); height: 6px; margin-top: 8px;
-  background: linear-gradient(var(--pf-oxblood), var(--pf-oxblood)) top / 100% 2px no-repeat, linear-gradient(var(--pf-brass), var(--pf-brass)) bottom / 100% 1px no-repeat; }
 .pf .pf-h2, .pf .pf-lab, .pf .pf-tab, .pf .pf-per-lab, .pf .pf-table th, .pf .pf-chip, .pf .pf-field { font-family: var(--pf-display); font-variant: small-caps; letter-spacing: 0.08em; }
 .pf .pf-h2 { color: var(--pf-green); font-weight: 400; font-size: 1.15rem; }
 .pf .pf-lab { color: var(--pf-oxblood); font-size: 0.85rem; }
@@ -273,12 +267,38 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 .pf-notes { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
 .pf-notes summary { cursor: pointer; color: var(--color-fg); }
 .pf-notes ul { margin: var(--cds-gap-sm) 0 0; padding-left: 1.2em; line-height: 1.6; }
+
+.pf .pf-head { align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--pf-brass); }
+.pf .pf-headtext { flex-basis: 100%; }
+.pf .pf-headtext::before {
+  content: "";
+  display: block;
+  height: clamp(56px, 15vw, 132px);
+  margin-bottom: 20px;
+  border-block: 4px double var(--pf-brass);
+  background: var(--pf-oxblood) url("motif-portefeuille.jpg") center 50% / cover no-repeat;
+}
+.pf .pf-title { color: var(--pf-oxblood); letter-spacing: 0.075em; overflow-wrap: anywhere; }
+.pf .pf-lede { color: var(--pf-ink-2); }
+.pf .pf-tabs { gap: 4px; }
+.pf .pf-tab { padding: 10px clamp(8px, 3vw, 18px); }
+.pf .pf-tab[aria-selected="true"] { background-color: var(--pf-oxblood); color: var(--pf-paper-2); }
+.pf .pf-tile { border-top-color: var(--pf-oxblood); }
+.pf .pf-card { min-width: 0; }
+.pf .pf-tablewrap { max-width: 100%; }
+.pf button, .pf input, .pf select { color-scheme: only light; }
+.pf :focus-visible, #pf-setup :focus-visible { outline: 2px solid #164639; outline-offset: 2px; }
+@media (max-width: 520px) {
+  .pf .pf-tiles { grid-template-columns: minmax(0, 1fr); }
+  .pf .pf-tabs { flex-wrap: wrap; }
+  .pf .pf-app-bar { justify-content: flex-start; }
+}
 </style>
 
 <div class="pf">
   <header class="pf-head" id="entete">
     <div class="pf-headtext">
-      <h1 class="pf-title">Mon Portefeuille</h1>
+      <h1 class="pf-title">John Rockefeller</h1>
       <p class="pf-lede" data-read lang="fr"><span data-draw="phrase">—</span></p>
       <div class="pf-marche" id="marche">
         <span data-draw="marche-chip" data-source="marche_gs"></span>

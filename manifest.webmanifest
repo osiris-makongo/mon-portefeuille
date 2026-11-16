@@ -1,12 +1,12 @@
 {
- "name": "Mon Portefeuille",
- "short_name": "Portefeuille",
+ "name": "John Rockefeller",
+ "short_name": "Rockefeller",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
  "orientation": "portrait",
- "background_color": "#f2e8cf",
- "theme_color": "#1f4a37",
+ "background_color": "#fbf1da",
+ "theme_color": "#581b29",
  "lang": "fr",
  "icons": [
   {

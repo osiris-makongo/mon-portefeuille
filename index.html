@@ -4,9 +4,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>John Rockefeller</title>
-<meta name="theme-color" content="#581b29" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#321923" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#581b29" id="pf-theme-color">
 <meta name="color-scheme" content="light dark">
+<script>
+(() => {
+  const system = matchMedia('(prefers-color-scheme: dark)');
+  const color = document.getElementById('pf-theme-color');
+  let preference = 'auto';
+  try {
+    const stored = localStorage.getItem('pf-theme');
+    if (stored === 'light' || stored === 'dark') preference = stored;
+  } catch (error) {}
+
+  function applyTheme() {
+    const dark = preference === 'dark' || (preference === 'auto' && system.matches);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    color.content = dark ? '#321923' : '#581b29';
+  }
+
+  applyTheme();
+  system.addEventListener('change', applyTheme);
+  document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('pf-theme');
+    select.value = preference;
+    select.addEventListener('change', () => {
+      preference = select.value;
+      try { localStorage.setItem('pf-theme', preference); } catch (error) {}
+      applyTheme();
+    });
+  });
+})();
+</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192-v2.png">
 <link rel="apple-touch-icon" href="apple-touch-icon-v2.png">
@@ -31,23 +59,23 @@
   --pf-warning: #80551d;
   --pf-grid: rgba(42, 33, 24, 0.10);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --pf-paper: #21181b;
-    --pf-paper-2: #302327;
-    --pf-ink: #f8e9ce;
-    --pf-ink-2: #dbc3a5;
-    --pf-green: #9cd7ba;
-    --pf-oxblood: #f0aeb9;
-    --pf-on-accent: #28191d;
-    --pf-brass: #c39a61;
-    --pf-brass-soft: rgba(195, 154, 97, 0.52);
-    --pf-brass-faint: rgba(195, 154, 97, 0.17);
-    --pf-positive: #a0d8ac;
-    --pf-negative: #ffb1ab;
-    --pf-warning: #f1cd83;
-    --pf-grid: rgba(248, 233, 206, 0.17);
-  }
+:root[data-theme="light"] { color-scheme: only light; }
+:root[data-theme="dark"] {
+  color-scheme: only dark;
+  --pf-paper: #21181b;
+  --pf-paper-2: #302327;
+  --pf-ink: #f8e9ce;
+  --pf-ink-2: #dbc3a5;
+  --pf-green: #9cd7ba;
+  --pf-oxblood: #f0aeb9;
+  --pf-on-accent: #28191d;
+  --pf-brass: #c39a61;
+  --pf-brass-soft: rgba(195, 154, 97, 0.52);
+  --pf-brass-faint: rgba(195, 154, 97, 0.17);
+  --pf-positive: #a0d8ac;
+  --pf-negative: #ffb1ab;
+  --pf-warning: #f1cd83;
+  --pf-grid: rgba(248, 233, 206, 0.17);
 }
 :root {
   --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 14px; --cds-gap-lg: 22px; --cds-gap-xl: 32px;
@@ -342,6 +370,12 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
       <button type="button" class="pf-cur-btn" data-cur="USD" aria-pressed="false">$</button>
     </div>
     <div class="pf-app-bar">
+      <label for="pf-theme" class="pf-sub">Thème</label>
+      <select id="pf-theme" class="dash-select">
+        <option value="auto">Automatique</option>
+        <option value="light">Clair</option>
+        <option value="dark">Sombre</option>
+      </select>
       <button type="button" class="pf-back" id="pf-refresh">↻ Actualiser</button>
       <span class="pf-sub" id="pf-maj"></span>
     </div>

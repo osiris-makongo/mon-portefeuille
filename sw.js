@@ -1,9 +1,39 @@
-const CACHE = 'pf-v4';
+const CACHE = 'pf-v5';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'motif-portefeuille.jpg', 'icon-192-v2.png', 'icon-512-v2.png', 'https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js'];
-self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
-self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
-self.addEventListener('fetch', (e) => {
-  const u = new URL(e.request.url);
-  if (u.hostname.endsWith('google.com') || u.hostname.endsWith('googleusercontent.com')) return; // les chiffres : toujours en direct
-  e.respondWith(fetch(e.request).then((r) => { const c = r.clone(); caches.open(CACHE).then((ca) => ca.put(e.request, c)); return r; }).catch(() => caches.match(e.request)));
+
+self.addEventListener('install', (event) => {
+  const requests = SHELL.map((url) => new Request(url, { cache: 'reload' }));
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(requests)).then(() => self.skipWaiting()));
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(caches.keys()
+    .then((keys) => Promise.all(keys.filter((key) => /^pf-v\d+$/.test(key) && key !== CACHE).map((key) => caches.delete(key))))
+    .then(() => self.clients.claim()));
+});
+
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  const host = new URL(request.url).hostname;
+  if (request.method !== 'GET' || /(^|\.)(google\.com|googleusercontent\.com)$/.test(host)) return;
+
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const navigation = request.mode === 'navigate';
+    try {
+      const response = navigation ? await fetch(request, { cache: 'reload' }) : await fetch(request);
+      if (response.ok || response.type === 'opaque') {
+        await cache.put(request, response.clone()).catch(() => {});
+      }
+      return response;
+    } catch (error) {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      if (navigation) {
+        const shell = await cache.match('./');
+        if (shell) return shell;
+      }
+      throw error;
+    }
+  })());
 });

@@ -418,6 +418,7 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
   background: linear-gradient(90deg, transparent, #0009 17%, #0009 83%, transparent);
   scrollbar-width: thin;
 }
+.pf #ecran-marche .pf-screen-content { background: transparent; }
 .pf #ecran-marche .pf-head { padding: clamp(100px, 23vh, 220px) 0 0; }
 .pf #ecran-marche .pf-headtext { max-width: 650px; }
 .pf .pf-market-copy { display: grid; gap: 16px; font-size: clamp(16px, 2.4vw, 22px); line-height: 1.5; text-shadow: 0 0 12px #ffffff50, 0 0 4px #000; }
@@ -446,6 +447,10 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
   color: #bbb;
   padding-inline: clamp(4px, 2vw, 16px);
   cursor: pointer;
+}
+@media (max-width: 520px) {
+  .pf .pf-screen-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
+  .pf .pf-screen-nav button { min-width: 0; padding-inline: 0; font-size: clamp(10px, 2.7vw, 13px); }
 }
 .pf .pf-screen-nav [aria-current] { color: #fff; text-shadow: 0 0 12px #fff; text-decoration: underline; text-underline-offset: 5px; }
 .pf .pf-table td { line-height: 1.42; }

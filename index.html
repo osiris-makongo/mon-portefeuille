@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>John Rockefeller</title>
-<meta name="theme-color" content="#581b29">
-<meta name="color-scheme" content="only light">
+<meta name="theme-color" content="#581b29" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#321923" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192-v2.png">
 <link rel="apple-touch-icon" href="apple-touch-icon-v2.png">
@@ -13,7 +14,41 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="robots" content="noindex">
 <style>
-  :root { color-scheme: only light; background: #581b29; }
+:root {
+  color-scheme: light dark;
+  --pf-paper: #fbf1da;
+  --pf-paper-2: #fff8e8;
+  --pf-ink: #302019;
+  --pf-ink-2: #5e483a;
+  --pf-green: #164639;
+  --pf-oxblood: #581b29;
+  --pf-on-accent: #fff8e8;
+  --pf-brass: #976d33;
+  --pf-brass-soft: rgba(154, 122, 53, 0.45);
+  --pf-brass-faint: rgba(154, 122, 53, 0.16);
+  --pf-positive: #2f6b3a;
+  --pf-negative: #9a2d20;
+  --pf-warning: #80551d;
+  --pf-grid: rgba(42, 33, 24, 0.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pf-paper: #21181b;
+    --pf-paper-2: #302327;
+    --pf-ink: #f8e9ce;
+    --pf-ink-2: #dbc3a5;
+    --pf-green: #9cd7ba;
+    --pf-oxblood: #f0aeb9;
+    --pf-on-accent: #28191d;
+    --pf-brass: #c39a61;
+    --pf-brass-soft: rgba(195, 154, 97, 0.52);
+    --pf-brass-faint: rgba(195, 154, 97, 0.17);
+    --pf-positive: #a0d8ac;
+    --pf-negative: #ffb1ab;
+    --pf-warning: #f1cd83;
+    --pf-grid: rgba(248, 233, 206, 0.17);
+  }
+}
 :root {
   --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 14px; --cds-gap-lg: 22px; --cds-gap-xl: 32px;
   --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 18px; --cds-radius: 2px;
@@ -21,16 +56,16 @@
   --cds-font-weight-medium: 600; --font-anthropic-serif: Georgia, serif; --font-anthropic-sans: system-ui, sans-serif;
   --cds-dur-slow: 400ms; --cds-ease-out: cubic-bezier(.2,.7,.2,1);
 }
-html, body { margin: 0; min-height: 100%; background: #fbf1da; color: #302019; }
+html, body { margin: 0; min-height: 100%; background: var(--pf-paper); color: var(--pf-ink); }
 body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
 [hidden] { display: none !important; }
-.dash-skeleton { background: rgba(154,122,53,0.15); border-radius: 2px; animation: pfpulse 1.4s ease-in-out infinite; color: transparent !important; }
+.dash-skeleton { background: var(--pf-brass-faint); border-radius: 2px; animation: pfpulse 1.4s ease-in-out infinite; color: transparent !important; }
 @keyframes pfpulse { 50% { opacity: .55; } }
-.dash-select { font: inherit; font-size: 0.95rem; padding: 6px 28px 6px 10px; border: 1px solid #9a7a35; border-radius: 0; background-color: #f2e8cf; color: #2a2118; }
+.dash-select { font: inherit; font-size: 0.95rem; padding: 6px 28px 6px 10px; border: 1px solid var(--pf-brass); border-radius: 0; background-color: var(--pf-paper); color: var(--pf-ink); }
 .pf-app-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%; justify-content: flex-end; }
-#pf-setup { max-width: 520px; margin: 32px auto; padding: 24px; font-family: Georgia, serif; color: #302019; background: #fff8e8; border: 5px double #976d33; }
-#pf-setup h1 { margin-top: 0; color: #581b29; }
-#pf-setup button { color: #fff8e8; background: #164639; border: 1px solid #164639; }
+#pf-setup { max-width: 520px; margin: 32px auto; padding: 24px; font-family: Georgia, serif; color: var(--pf-ink); background: var(--pf-paper-2); border: 5px double var(--pf-brass); }
+#pf-setup h1 { margin-top: 0; color: var(--pf-oxblood); }
+#pf-setup button { color: var(--pf-on-accent); background: var(--pf-green); border: 1px solid var(--pf-green); }
 @media (max-width: 600px) { #pf-setup { margin: 16px; } }
 #pf-setup form { display: grid; gap: 10px; }
 #pf-setup input, #pf-setup button { font: inherit; padding: 8px; }
@@ -153,17 +188,14 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 /* Palette et motifs inspirés du tapis de référence. */
 #dash-root { --dash-gutter: 0; }
 .pf {
-  --pf-paper: #fbf1da; --pf-paper-2: #fff8e8; --pf-ink: #302019; --pf-ink-2: #5e483a;
-  --pf-green: #164639; --pf-oxblood: #581b29; --pf-brass: #976d33; --pf-brass-soft: rgba(154, 122, 53, 0.45); --pf-brass-faint: rgba(154, 122, 53, 0.16);
   --pf-display: 'Baskerville', 'Baskerville Old Face', 'Hoefler Text', 'Libre Baskerville', Garamond, Georgia, 'Times New Roman', serif;
   --pf-text: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
   --color-bg: var(--pf-paper); --color-panel: var(--pf-paper-2); --color-fg: var(--pf-ink); --color-fg-muted: var(--pf-ink-2);
-  --color-border-line: var(--pf-brass-soft); --color-ok: #2f6b3a; --color-bad: #9a2d20; --color-warn: #9a6a12;
-  --cds-text-secondary: var(--pf-ink-2); --cds-chart-grid: rgba(42, 33, 24, 0.10); --cds-chart-axis: var(--pf-brass-soft);
+  --color-border-line: var(--pf-brass-soft); --color-ok: var(--pf-positive); --color-bad: var(--pf-negative); --color-warn: var(--pf-warning);
+  --cds-text-secondary: var(--pf-ink-2); --cds-chart-grid: var(--pf-grid); --cds-chart-axis: var(--pf-brass-soft);
   --cds-chart-reference: var(--pf-brass-soft); --cds-chart-muted: var(--pf-ink-2);
-  --cds-surface-popover: #fbf6e8; --cds-border: var(--pf-brass); --cds-shadow-popover: 0 6px 18px rgba(42, 33, 24, 0.25);
+  --cds-surface-popover: var(--pf-paper-2); --cds-border: var(--pf-brass); --cds-shadow-popover: 0 6px 18px rgba(42, 33, 24, 0.25);
   --pf-accent: var(--pf-green);
-  color-scheme: only light;
   font-family: var(--pf-text) !important;
   background-color: var(--pf-paper);
   box-sizing: border-box;
@@ -182,7 +214,7 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 .pf .pf-tile { border-top: 3px double var(--pf-green); }
 .pf .pf-cur, .pf .pf-per-btns { border-color: var(--pf-brass); border-radius: 0; }
 .pf .pf-cur-btn, .pf .pf-per-btn { font-family: var(--pf-display); }
-.pf .pf-cur-btn[aria-pressed="true"], .pf .pf-per-btn[aria-pressed="true"] { background: var(--pf-green); color: var(--pf-paper-2); }
+.pf .pf-cur-btn[aria-pressed="true"], .pf .pf-per-btn[aria-pressed="true"] { background: var(--pf-green); color: var(--pf-on-accent); }
 .pf .pf-tab[aria-selected="true"] { color: var(--pf-oxblood); border-bottom-color: var(--pf-oxblood); }
 .pf .pf-tabs { border-bottom: 3px double var(--pf-brass-soft); }
 .pf .pf-table th { color: var(--pf-green); font-size: 0.85rem; font-weight: 400; border-bottom: 3px double var(--pf-brass); }
@@ -282,12 +314,11 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 .pf .pf-lede { color: var(--pf-ink-2); }
 .pf .pf-tabs { gap: 4px; }
 .pf .pf-tab { padding: 10px clamp(8px, 3vw, 18px); }
-.pf .pf-tab[aria-selected="true"] { background-color: var(--pf-oxblood); color: var(--pf-paper-2); }
+.pf .pf-tab[aria-selected="true"] { background-color: var(--pf-oxblood); color: var(--pf-on-accent); }
 .pf .pf-tile { border-top-color: var(--pf-oxblood); }
 .pf .pf-card { min-width: 0; }
 .pf .pf-tablewrap { max-width: 100%; }
-.pf button, .pf input, .pf select { color-scheme: only light; }
-.pf :focus-visible, #pf-setup :focus-visible { outline: 2px solid #164639; outline-offset: 2px; }
+.pf :focus-visible, #pf-setup :focus-visible { outline: 2px solid var(--pf-green); outline-offset: 2px; }
 @media (max-width: 520px) {
   .pf .pf-tiles { grid-template-columns: minmax(0, 1fr); }
   .pf .pf-tabs { flex-wrap: wrap; }

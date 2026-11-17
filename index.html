@@ -508,7 +508,7 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 /* tableau des actions compact sur téléphone */
 .pf .pf-table th, .pf .pf-table td { padding-inline: 6px; }
 @media (max-width: 600px) {
-  .pf .pf-table th:nth-child(4), .pf .pf-table td:nth-child(4), .pf .pf-table th:nth-child(5), .pf .pf-table td:nth-child(5) { display: none; }
+  .pf .pf-table th:nth-child(4), .pf .pf-table td:nth-child(4), .pf .pf-table th:nth-child(6), .pf .pf-table td:nth-child(6), .pf .pf-pc { display: none; }
   .pf .pf-table { width: 100%; font-size: 0.78rem; }
   .pf .pf-table td:first-child { max-width: 34vw; overflow: hidden; text-overflow: ellipsis; }
   .pf .pf-tablewrap { overflow-x: hidden; }
@@ -1347,7 +1347,7 @@ dash.draw('table', (el) => {
   const thead = document.createElement('thead'); const hr = document.createElement('tr');
   [['', 'nom'], [F.sym[cur], 'valeur_' + k], ['Total', 'pct'], ['Gain', 'gain_' + k]].forEach(([t, f]) => { const th = document.createElement('th'); th.textContent = t; th.setAttribute('data-field', f); hr.append(th); });
   const per = window.pfState.per, pl = per === 'tout' ? 'depuis le début' : 'depuis ' + window.pfPerTxt[per];
-  [['Gain ' + window.pfPerTxt[per], 'gain_' + per + '_' + k], [per === 'tout' ? 'Debut' : window.pfPerTxt[per], 'pct_' + per]].forEach(([t, f]) => { const th = document.createElement('th'); th.textContent = t; th.setAttribute('data-field', f); th.setAttribute('data-source', 'periodes'); hr.append(th); });
+  [[per === 'tout' ? 'Debut' : window.pfPerTxt[per], 'gain_' + per + '_' + k, 'Gain '], [per === 'tout' ? 'Debut' : window.pfPerTxt[per], 'pct_' + per]].forEach(([t, f, pre]) => { const th = document.createElement('th'); if (pre) { const s = document.createElement('span'); s.className = 'pf-pc'; s.textContent = pre; th.append(s, t); } else th.textContent = t; th.setAttribute('data-field', f); th.setAttribute('data-source', 'periodes'); hr.append(th); });
   const perData = dash.data('periodes'); const perBy = new Map((perData.status === 'ok' && perData.data ? perData.data : []).map((x) => [x.symbol, x]));
   thead.append(hr);
   const tb = document.createElement('tbody');

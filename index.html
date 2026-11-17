@@ -77,7 +77,7 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 <script>
 /* Petit moteur qui remplace celui de Claude : lit les onglets publiés du tableau Google et redessine la page */
 (function () {
-  const GIDS = {lignes_gs: 1, achats_gs: 3, histo_gs: 4, marche_gs: 5, suivi_gs: 6};
+  const GIDS = {lignes_gs: 1, achats_gs: 3, histo_gs: 8, marche_gs: 5, suivi_gs: 6};
   const SKIP = {lignes_gs: 3};
   const L = {}, C = {}, Dr = {}, data = {};
   let params = {horizon: 12, mensuel: 200};
@@ -466,6 +466,35 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
     to { clip-path: inset(-10px -10px -10px -10px); }
   }
 }
+
+/* --- Corrections de lisibilité (Claude) : police digitale pour les chiffres, police lisible pour le texte --- */
+.pf { --pf-num: "DSEG14 Classic", "IBM Plex Mono", monospace; --pf-read: "Inter", "Segoe UI", -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --pf-display: var(--pf-read); --pf-text: var(--pf-read); --pf-positive: #5fe3a1; --pf-negative: #ff7070; font-family: var(--pf-read) !important; }
+#pf-setup { font-family: "Inter", "Segoe UI", -apple-system, Roboto, Arial, sans-serif !important; }
+.pf .pf-big, .pf .pf-mk-v { font-family: var(--pf-num) !important; letter-spacing: 0.02em; }
+.pf .pf-section-title, .pf .pf-h2, .pf .pf-lab, .pf .pf-tab, .pf .pf-chip, .pf .pf-screen-nav button, .pf .pf-per-btn, .pf .pf-cur-btn, .pf .pf-table th {
+  font-family: var(--pf-read) !important; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 600; }
+.pf .pf-lede, .pf .pf-sub, .pf .pf-mk-s, .pf .pf-mk-n, .pf .pf-table td, .pf .pf-notes, .pf .pf-tip, .pf .pf-warn { font-family: var(--pf-read) !important; letter-spacing: 0; }
+.pf .pf-up { color: var(--pf-positive) !important; }
+.pf .pf-down { color: var(--pf-negative) !important; }
+.pf .pf-chip-bad { color: var(--pf-negative) !important; } .pf .pf-chip-ok { color: var(--pf-positive) !important; }
+/* rien ne déborde sur téléphone */
+.pf .pf-head, .pf .pf-headtext, .pf .pf-market-copy, .pf .pf-marche, .pf .pf-mkt, .pf .pf-lede { min-width: 0; max-width: 100%; }
+.pf .pf-headtext, .pf .pf-market-copy, .pf .pf-marche { width: 100%; }
+.pf .pf-mk { min-width: 0; overflow-wrap: anywhere; }
+.pf .pf-lede { overflow-wrap: anywhere; white-space: normal; }
+.pf .pf-tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.pf .pf-screen-content { overflow-x: hidden; }
+@media (max-width: 600px) {
+  .pf .pf-mkt { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .pf .pf-market-copy { font-size: 16px !important; }
+  .pf .pf-market-copy .pf-chip { font-size: 22px !important; letter-spacing: 0.08em; }
+  .pf .pf-mk-v { font-size: 1.15rem; }
+  .pf .pf-table { font-size: 0.85rem; }
+  .pf .pf-table th { letter-spacing: 0.06em; font-size: 0.68rem; }
+  .pf .pf-screen-content { background: rgba(0, 0, 0, 0.78) !important; }
+  .pf #ecran-marche .pf-screen-content { background: linear-gradient(transparent 0, rgba(0,0,0,0.75) 30%) !important; }
+}
 </style>
 
 <div class="pf">
@@ -737,14 +766,18 @@ dash.loader('suivi_gs', {
 // ---------- calculs ----------
 dash.calc('change', {
   title: 'Taux de change',
-  description: "Dollar et euro en francs suisses, chaque jour (Google Finance).",
-  inputs: ['histo_gs'],
-  fn: (histo) => {
+  description: "Dollar et euro en francs suisses, chaque jour (Google Finance). Si l'historique manque, on prend le taux du jour du tableau.",
+  inputs: ['histo_gs', 'lignes_gs'],
+  fn: (histo, lignes) => {
     const usd = new Map(), eur = new Map();
     for (const h of histo) { if (h.ticker === 'USDCHF') usd.set(h.date, h.close); else if (h.ticker === 'EURCHF') eur.set(h.date, h.close); }
     const dates = [...new Set([...usd.keys(), ...eur.keys()])].sort();
     let lu = null, le = null;
-    return dates.map((date) => { if (usd.has(date)) lu = usd.get(date); if (eur.has(date)) le = eur.get(date); return {date, usdchf: lu, eurchf: le}; });
+    const out = dates.map((date) => { if (usd.has(date)) lu = usd.get(date); if (eur.has(date)) le = eur.get(date); return {date, usdchf: lu, eurchf: le}; });
+    const nowU = (lignes.find((l) => l.devise === 'USD' && l.taux_chf) || {}).taux_chf;
+    const nowE = (lignes.find((l) => l.devise === 'EUR' && l.taux_chf) || {}).taux_chf;
+    if (!out.length && (nowU || nowE)) out.push({date: new Date().toISOString().slice(0, 10), usdchf: nowU || 0.84, eurchf: nowE || 0.93});
+    return out;
   }
 });
 

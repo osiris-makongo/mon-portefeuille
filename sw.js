@@ -1,4 +1,4 @@
-const CACHE = 'pf-v26';
+const CACHE = 'pf-v27';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'DSEG14Classic-Regular.woff2', 'pop-smoke-portrait-32.png', 'pop-smoke-portrait-192.png', 'pop-smoke-portrait-512.png', 'pop-smoke-portrait-maskable-512.png', 'portrait-fond-mobile.jpg', 'portrait-fond-pc.jpg', 'https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js'];
 
 self.addEventListener('install', (event) => {

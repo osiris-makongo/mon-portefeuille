@@ -7,6 +7,9 @@
 <meta name="theme-color" content="#000000">
 <meta name="color-scheme" content="only dark">
 <link rel="preload" href="DSEG14Classic-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600&display=swap">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="pop-smoke-portrait-32.png">
 <link rel="apple-touch-icon" sizes="192x192" href="pop-smoke-portrait-192.png">
@@ -19,6 +22,7 @@
   src: url("DSEG14Classic-Regular.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
+  unicode-range: U+0030-0039, U+002B-002E, U+0025, U+003A, U+002F;
 }
 :root {
   color-scheme: only dark;
@@ -345,7 +349,11 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 }
 
 
-.pf { --pf-display: "DSEG14 Classic", "IBM Plex Mono", monospace; }
+.pf { --pf-display: "DSEG14 Classic", "Chakra Petch", "Segoe UI", system-ui, sans-serif; --pf-text: "DSEG14 Classic", "Chakra Petch", "Segoe UI", system-ui, sans-serif; }
+/* lettres : Chakra Petch (anguleuse comme les chiffres digitaux, mais lisible) */
+.pf .pf-section-title, .pf .pf-h3, .pf .pf-screen-nav button, .pf .pf-tab, .pf .pf-dtile-n, .pf .pf-lab, .pf .pf-table th { text-transform: uppercase; letter-spacing: .06em; }
+.pf .pf-screen-nav button { font-weight: 600; }
+.pf .pf-section-title, .pf .pf-h3, .pf .pf-dtile-v, .pf .pf-big { font-weight: 500; }
 .pf .pf-section { display: grid; gap: clamp(22px, 4vw, 38px); min-width: 0; }
 .pf .pf-section-title, .pf .pf-big {
   margin: 0;

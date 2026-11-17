@@ -467,17 +467,15 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
   }
 }
 
-/* --- Corrections de lisibilité (Claude) : police digitale pour les chiffres, police lisible pour le texte --- */
-.pf { --pf-num: "DSEG14 Classic", "IBM Plex Mono", monospace; --pf-read: "Inter", "Segoe UI", -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --pf-display: var(--pf-read); --pf-text: var(--pf-read); --pf-positive: #5fe3a1; --pf-negative: #ff7070; font-family: var(--pf-read) !important; }
-#pf-setup { font-family: "Inter", "Segoe UI", -apple-system, Roboto, Arial, sans-serif !important; }
-.pf .pf-big, .pf .pf-mk-v { font-family: var(--pf-num) !important; letter-spacing: 0.02em; }
-.pf .pf-section-title, .pf .pf-h2, .pf .pf-lab, .pf .pf-tab, .pf .pf-chip, .pf .pf-screen-nav button, .pf .pf-per-btn, .pf .pf-cur-btn, .pf .pf-table th {
-  font-family: var(--pf-read) !important; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 600; }
-.pf .pf-lede, .pf .pf-sub, .pf .pf-mk-s, .pf .pf-mk-n, .pf .pf-table td, .pf .pf-notes, .pf .pf-tip, .pf .pf-warn { font-family: var(--pf-read) !important; letter-spacing: 0; }
+/* --- Corrections (Claude) : vert et rouge pour gains et pertes --- */
+.pf { --pf-positive: #5fe3a1; --pf-negative: #ff7070; }
 .pf .pf-up { color: var(--pf-positive) !important; }
 .pf .pf-down { color: var(--pf-negative) !important; }
 .pf .pf-chip-bad { color: var(--pf-negative) !important; } .pf .pf-chip-ok { color: var(--pf-positive) !important; }
+.pf .pf-logo { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; background: #fff; box-shadow: 0 0 10px #ffffff40; overflow: hidden; vertical-align: middle; }
+.pf .pf-logo img { width: 30px; height: 30px; object-fit: contain; display: block; }
+.pf .pf-logo-cell { display: inline-flex; align-items: center; gap: 8px; }
+.pf .pf-table td:first-child { padding-block: 6px; }
 /* rien ne déborde sur téléphone */
 .pf .pf-head, .pf .pf-headtext, .pf .pf-market-copy, .pf .pf-marche, .pf .pf-mkt, .pf .pf-lede { min-width: 0; max-width: 100%; }
 .pf .pf-headtext, .pf .pf-market-copy, .pf .pf-marche { width: 100%; }
@@ -684,7 +682,7 @@ dash.loader('lignes_gs', {
       if (!r[0] || !r[1]) continue;
       rows.push({nom: r[0], ticker: r[1], devise: r[2] || 'USD', cotee: r[3] || r[2] || 'USD', manuel: r[4] ? 1 : 0,
         quantite: N(r[5]), prix_moyen: N(r[6]), prix: N(r[7]), pct: N(r[8]), valeur_devise: N(r[9]), taux_chf: N(r[10]),
-        valeur_chf: N(r[11]), investi_chf: N(r[12]), gain_chf: N(r[13]), gain_pct: N(r[14]), jour: N(r[15])});
+        valeur_chf: N(r[11]), investi_chf: N(r[12]), gain_chf: N(r[13]), gain_pct: N(r[14]), jour: N(r[15]), site: (r[16] || '').trim()});
     }
     return {data: rows, columns: ['nom', 'ticker', 'devise', 'cotee', 'manuel', 'quantite', 'prix_moyen', 'prix', 'pct', 'valeur_devise', 'taux_chf', 'valeur_chf', 'investi_chf', 'gain_chf', 'gain_pct', 'jour']};
   }
@@ -796,7 +794,7 @@ dash.calc('lignes', {
     const now = window.pfFx(change, '9999-12-31');
     const r2 = (x) => (x == null ? null : Math.round(x * 100) / 100);
     const out = lignes.filter((l) => l.quantite).map((l) => ({
-      symbol: l.ticker, nom: l.nom, devise: l.devise, manuel: l.manuel, prix: l.prix, prix_moyen: l.prix_moyen,
+      symbol: l.ticker, nom: l.nom, site: l.site, devise: l.devise, manuel: l.manuel, prix: l.prix, prix_moyen: l.prix_moyen,
       pct: r2(l.pct * 100), jour: l.jour == null ? null : r2(l.jour * 100),
       valeur_chf: r2(l.valeur_chf), valeur_eur: r2(l.valeur_chf / now.eur), valeur_usd: r2(l.valeur_chf / now.usd),
       gain_chf: r2(l.gain_chf), gain_eur: r2(l.gain_chf / now.eur), gain_usd: r2(l.gain_chf / now.usd),
@@ -1335,8 +1333,14 @@ dash.draw('table', (el) => {
   for (const r of l.data) {
     const tr = document.createElement('tr'); tr.className = 'pf-row' + (window.pfState.sel === r.symbol ? ' is-sel' : '');
     tr.setAttribute('data-key', encodeURIComponent(r.symbol)); tr.tabIndex = 0; tr.setAttribute('role', 'button');
-    const c1 = document.createElement('td'); c1.textContent = r.nom;
-    if (r.manuel) { const tg = document.createElement('span'); tg.className = 'pf-tag'; tg.textContent = 'prix manuel'; c1.append(tg); }
+    const c1 = document.createElement('td');
+    if (r.site) {
+      const box = document.createElement('span'); box.className = 'pf-logo'; box.title = r.nom;
+      const im = document.createElement('img'); im.alt = r.nom; im.loading = 'lazy'; im.referrerPolicy = 'no-referrer';
+      im.src = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(r.site) + '&sz=128';
+      im.onerror = () => { c1.textContent = window.pfPlain ? window.pfPlain(r.nom) : r.nom; };
+      box.append(im); const cell = document.createElement('span'); cell.className = 'pf-logo-cell'; cell.append(box); c1.append(cell);
+    } else c1.textContent = r.nom;
     const c2 = document.createElement('td'); c2.textContent = r['valeur_' + k] == null ? '—' : F.money(r['valeur_' + k], cur);
     const c3 = document.createElement('td'); c3.textContent = r.pct == null ? '—' : F.pct(r.pct); if (r.pct != null) c3.className = r.pct >= 0 ? 'pf-up' : 'pf-down';
     const c4 = document.createElement('td'); c4.textContent = r['gain_' + k] == null ? '—' : F.money(r['gain_' + k], cur, true); if (r.gain_chf != null) c4.className = r.gain_chf >= 0 ? 'pf-up' : 'pf-down';
@@ -1517,5 +1521,29 @@ window.pfLoad();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 
+
+<script>
+/* Pas de caractères spéciaux : la police digitale n'a ni accents ni symboles. On les remplace partout, même dans ce qui s'affiche plus tard. */
+window.pfPlain = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/[−–—]/g, '-').replace(/[·•]/g, '-').replace(/[‘’]/g, "'")
+  .replace(/[«»“”]/g, '"').replace(/…/g, '...').replace(/↻\s?/g, '')
+  .replace(/€/g, 'EUR').replace(/[  ]/g, ' ').replace(/→/g, '->').replace(/—/g, '-')
+  .replace(/œ/g, 'oe').replace(/æ/g, 'ae');
+(function () {
+  const fix = (node) => {
+    if (node.nodeType === 3) {
+      const p = node.parentNode; if (p && /^(SCRIPT|STYLE)$/.test(p.nodeName)) return;
+      const t = node.nodeValue, q = window.pfPlain(t); if (q !== t) node.nodeValue = q; return;
+    }
+    if (node.nodeType !== 1 || /^(SCRIPT|STYLE)$/.test(node.nodeName)) return;
+    for (const a of ['aria-label', 'title', 'placeholder']) { const v = node.getAttribute && node.getAttribute(a); if (v) { const q = window.pfPlain(v); if (q !== v) node.setAttribute(a, q); } }
+    node.childNodes.forEach(fix);
+  };
+  const roots = [document.getElementById('dash-root'), document.getElementById('pf-setup')].filter(Boolean);
+  roots.forEach(fix);
+  const mo = new MutationObserver((ms) => { for (const m of ms) { if (m.type === 'characterData') fix(m.target); else m.addedNodes.forEach(fix); } });
+  roots.forEach((r) => mo.observe(r, {childList: true, subtree: true, characterData: true}));
+})();
+</script>
 </body>
 </html>

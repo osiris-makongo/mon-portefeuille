@@ -52,12 +52,12 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, 0.18) 45%, #000 96%), url("horizon-neon-pc.jpg") center / cover no-repeat;
+  background: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, 0.45) 45%, #000 96%), url("portrait-fond-pc.jpg") center / cover no-repeat;
   transform-origin: 86% 20%;
 }
 @media (max-width: 700px) {
   body::before {
-    background-image: linear-gradient(180deg, transparent 4%, rgba(0, 0, 0, 0.26) 44%, #000 96%), url("horizon-neon-mobile.jpg");
+    background-image: linear-gradient(180deg, rgba(0,0,0,0.15) 4%, rgba(0, 0, 0, 0.6) 40%, #000 70%), url("portrait-fond-mobile.jpg");
     transform-origin: 50% 17%;
   }
 }
@@ -515,8 +515,20 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
   .pf .pf-table th { white-space: nowrap; }
   .pf .pf-logo { width: 34px; height: 34px; } .pf .pf-logo img { width: 26px; height: 26px; }
 }
+
+/* infos de la courbe au-dessus du graphique */
+.pf .pf-readout { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; min-height: 3.4em; margin: 0 0 8px; padding: 0 0 8px; border-bottom: 1px solid var(--color-border-line); font-size: 0.85rem; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.pf .pf-readout .pf-tip-d { width: 100%; opacity: 0.75; }
+
+/* ecran d'ouverture : portrait en fond */
+#pf-intro { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 14vh; background: linear-gradient(180deg, rgba(0,0,0,0) 45%, #000 88%), url("portrait-fond-mobile.jpg") center top / cover no-repeat #080b14; transition: opacity .5s ease; }
+@media (min-width: 701px) { #pf-intro { background-image: linear-gradient(180deg, rgba(0,0,0,0) 50%, #000 95%), url("portrait-fond-pc.jpg"); background-position: center; } }
+#pf-intro span { color: #fff; font: 700 1.6rem/1.2 system-ui, sans-serif; letter-spacing: .02em; }
+#pf-intro.out { opacity: 0; pointer-events: none; }
 </style>
 
+<div id="pf-intro"><span>John Rockefeller</span></div>
+<script>setTimeout(function(){var e=document.getElementById('pf-intro');if(!e)return;e.classList.add('out');setTimeout(function(){e.remove()},600)},1400);</script>
 <div class="pf">
   <main class="pf-deck" aria-label="Tableau de bord">
     <section class="pf-screen" id="ecran-marche" aria-label="Marché">
@@ -1251,12 +1263,13 @@ window.pfGapChart = function (el, series, opts) {
   lg.append(key('var(--pf-accent)', false, opts.valueLabel), key('var(--color-fg-muted)', true, 'Argent investi'), ring(), sw('var(--color-ok)', 'En gain'), sw('var(--color-bad)', 'En perte'));
   el.append(lg);
 
-  const tip = document.createElement('div'); tip.className = 'pf-tip'; tip.hidden = true; el.append(tip);
-  const dot = svg.append('circle').attr('r', 4).style('fill', 'var(--color-fg)').style('display', 'none');
+  // infos affichées AU-DESSUS de la courbe (jamais par-dessus), + ligne verticale et rond sur le point
+  const tip = document.createElement('div'); tip.className = 'pf-readout'; el.insertBefore(tip, el.firstChild);
+  const guide = svg.append('line').attr('y1', m.t).attr('y2', H - m.b).style('stroke', 'var(--color-fg)').style('stroke-width', 1).style('opacity', 0.55).style('display', 'none');
+  const dot = svg.append('circle').attr('r', 7).style('fill', 'none').style('stroke', 'var(--color-fg)').style('stroke-width', 2.5).style('display', 'none');
   const bis = d3.bisector((s) => s.d).center;
-  const show = (ev) => {
-      const [px] = d3.pointer(ev, svg.node());
-      const s = series[bis(series, x.invert(px))];
+  const showAt = (s) => {
+      guide.style('display', null).attr('x1', x(s.d)).attr('x2', x(s.d));
       dot.style('display', null).attr('cx', x(s.d)).attr('cy', y(s.v));
       const g = s.v - s.inv;
       const l1 = document.createElement('div'); l1.className = 'pf-tip-d'; l1.textContent = s.now ? 'Maintenant' : s.close ? 'Clôture du ' + window.pfLongDate(s.d) : opts.intraday ? hourFmt(s.d) : window.pfLongDate(s.d);
@@ -1264,14 +1277,13 @@ window.pfGapChart = function (el, series, opts) {
       const l2 = document.createElement('div'); l2.textContent = opts.valueLabel + ' : ' + F.money(s.v, cur);
       const l3 = document.createElement('div'); l3.textContent = 'Investi : ' + F.money(s.inv, cur);
       const l4 = document.createElement('div'); l4.className = g >= 0 ? 'pf-up' : 'pf-down'; l4.textContent = (g >= 0 ? 'Gain : ' : 'Perte : ') + F.money(g, cur, true) + ' (' + F.pct(s.inv ? (g / s.inv) * 100 : 0) + ')';
-      tip.replaceChildren(...[l1, s.achat ? l0 : null, l2, l3, l4].filter(Boolean)); tip.hidden = false;
-      const bw = el.clientWidth, tw = tip.offsetWidth, sx = (x(s.d) / W) * bw;
-      tip.style.left = Math.min(Math.max(0, sx - tw / 2), bw - tw) + 'px';
-      tip.style.top = Math.max(0, (y(s.v) / H) * el.querySelector('svg').getBoundingClientRect().height - 110) + 'px';
+      tip.replaceChildren(...[l1, s.achat ? l0 : null, l2, l3, l4].filter(Boolean));
   };
+  const show = (ev) => { const [px] = d3.pointer(ev, svg.node()); showAt(series[bis(series, x.invert(px))]); };
   svg.append('rect').attr('x', m.l).attr('y', 0).attr('width', W - m.l - m.r).attr('height', H).style('fill', 'transparent').style('touch-action', 'pan-y').style('cursor', 'crosshair')
     .on('pointerdown', show).on('pointermove', show)
-    .on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') { tip.hidden = true; dot.style('display', 'none'); } });
+    .on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') showAt(series[series.length - 1]); });
+  showAt(series[series.length - 1]);
 };
 
 dash.draw('chart', (el) => {
@@ -1472,21 +1484,19 @@ dash.draw('proj-chart', (el) => {
     const k = document.createElement('span'); const s = document.createElement('span'); s.className = 'pf-key'; s.style.borderTopColor = c; if (d) s.style.borderTopStyle = 'dashed'; k.append(s, document.createTextNode(t)); lg.append(k);
   });
   el.append(lg);
-  const tip = document.createElement('div'); tip.className = 'pf-tip'; tip.hidden = true; el.append(tip);
-  const guide = svg.append('line').attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--cds-chart-reference)').style('display', 'none');
+  const tip = document.createElement('div'); tip.className = 'pf-readout'; el.insertBefore(tip, el.firstChild);
+  const guide = svg.append('line').attr('y1', mg.t).attr('y2', H - mg.b).style('stroke', 'var(--color-fg)').style('opacity', 0.55).style('display', 'none');
   const bis = d3.bisector((s) => s.d).center;
-  const showP = (ev) => {
-      const [px] = d3.pointer(ev, svg.node()); const s = S[bis(S, x.invert(px))];
+  const showAtP = (s) => {
       guide.style('display', null).attr('x1', x(s.d)).attr('x2', x(s.d));
       const mk = (t, c) => { const d = document.createElement('div'); d.textContent = t; if (c) d.className = c; return d; };
       tip.replaceChildren(mk(s.m === 0 ? "Aujourd'hui" : monthFmt(s.d) + ' (dans ' + s.m + ' mois)', 'pf-tip-d'), mk('Optimiste : ' + F.money(s.o, cur), 'pf-up'), mk('Normal : ' + F.money(s.n, cur)), mk('Pessimiste : ' + F.money(s.p, cur), 'pf-down'), mk('Investi : ' + F.money(s.i, cur), 'pf-tip-d'));
-      tip.hidden = false;
-      const bw = el.clientWidth, tw = tip.offsetWidth, sx = (x(s.d) / W) * bw;
-      tip.style.left = Math.min(Math.max(0, sx + 12), bw - tw) + 'px'; tip.style.top = '8px';
   };
+  const showP = (ev) => { const [px] = d3.pointer(ev, svg.node()); showAtP(S[bis(S, x.invert(px))]); };
   svg.append('rect').attr('x', mg.l).attr('y', 0).attr('width', W - mg.l - mg.r).attr('height', H).style('fill', 'transparent').style('touch-action', 'pan-y').style('cursor', 'crosshair')
     .on('pointerdown', showP).on('pointermove', showP)
-    .on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') { tip.hidden = true; guide.style('display', 'none'); } });
+    .on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') showAtP(S[S.length - 1]); });
+  showAtP(S[S.length - 1]);
 });
 </script>
 

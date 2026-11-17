@@ -1367,7 +1367,7 @@ dash.draw('table', (el) => {
     const c4 = document.createElement('td'); c4.textContent = r['gain_' + k] == null ? '—' : F.money(r['gain_' + k], cur, true).replace(' ' + F.sym[cur], ''); if (r.gain_chf != null) c4.className = r.gain_chf >= 0 ? 'pf-up' : 'pf-down';
     const pp = perBy.get(r.symbol);
     const gv = pp ? pp['gain_' + per + '_' + k] : null, pv = pp ? pp['pct_' + per] : null;
-    const c5 = document.createElement('td'); c5.textContent = gv == null ? '—' : F.money(gv, cur, true).replace(' ' + F.sym[cur], ''); if (gv != null) c5.className = gv >= 0 ? 'pf-up' : 'pf-down';
+    const c5 = document.createElement('td'); c5.textContent = gv == null ? '—' : F.money(gv, cur, true).replace(' ' + F.sym[cur], '') + ({ CHF: '.-', EUR: '\u20AC', USD: '$' })[cur]; c5.className = 'pf-keepsym' + (gv == null ? '' : gv >= 0 ? ' pf-up' : ' pf-down');
     const c6 = document.createElement('td'); c6.textContent = pv == null ? '—' : F.pct(pv); if (pv != null) c6.className = pv >= 0 ? 'pf-up' : 'pf-down';
     tr.append(c1, c2, c3, c4, c5, c6);
     const go = () => window.pfSelect(window.pfState.sel === r.symbol ? null : r.symbol);
@@ -1552,7 +1552,7 @@ window.pfPlain = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '')
   const fix = (node) => {
     if (node.nodeType === 3) {
       const p = node.parentNode; if (p && /^(SCRIPT|STYLE)$/.test(p.nodeName)) return;
-      const t = node.nodeValue, q = window.pfPlain(t); if (q !== t) node.nodeValue = q; return;
+      const t = node.nodeValue; let q = window.pfPlain(t); if (node.parentElement && node.parentElement.classList.contains('pf-keepsym')) q = q.replace(/EUR/g, '\u20AC'); if (q !== t) node.nodeValue = q; return;
     }
     if (node.nodeType !== 1 || /^(SCRIPT|STYLE)$/.test(node.nodeName)) return;
     for (const a of ['aria-label', 'title', 'placeholder']) { const v = node.getAttribute && node.getAttribute(a); if (v) { const q = window.pfPlain(v); if (q !== v) node.setAttribute(a, q); } }

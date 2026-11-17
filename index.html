@@ -81,7 +81,7 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
 <script>
 /* Petit moteur qui remplace celui de Claude : lit les onglets publiés du tableau Google et redessine la page */
 (function () {
-  const GIDS = {lignes_gs: 1, achats_gs: 3, histo_gs: 8, marche_gs: 5, suivi_gs: 6};
+  const GIDS = {lignes_gs: 1, achats_gs: 3, histo_gs: 8, marche_gs: 5, suivi_gs: 6, cours5_gs: 12};
   const SKIP = {lignes_gs: 3};
   const L = {}, C = {}, Dr = {}, data = {};
   let params = {horizon: 12, mensuel: 200};
@@ -584,6 +584,11 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 .pf .pf-fiche-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .pf .pf-fiche .pf-dtiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 700px) { .pf .pf-fiche .pf-dtiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.pf .pf-cours-head { margin: 6px 0 4px; }
+.pf .pf-cours-big { font-family: var(--pf-display); font-size: clamp(26px, 7vw, 40px); color: #fff; }
+.pf .pf-avenir td:nth-child(2) { text-align: left; font-size: 13px; }
+.pf .pf-avenir td:nth-child(4) { display: table-cell !important; }
 </style>
 
 <div id="pf-intro"><span>John Rockefeller</span></div>
@@ -626,15 +631,13 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
   <div class="pf-panel" id="contre" role="tabpanel" hidden>
     <div class="pf-per" style="margin-bottom: 12px">
     <div class="pf-per-btns" role="group" aria-label="Periode">
-      <button type="button" class="pf-per-btn" data-per="1j" aria-pressed="true">24 h</button>
-      <button type="button" class="pf-per-btn" data-per="2j" aria-pressed="false">48 h</button>
-      <button type="button" class="pf-per-btn" data-per="7j" aria-pressed="false">7 jours</button>
-      <button type="button" class="pf-per-btn" data-per="1m" aria-pressed="false">1 mois</button>
-      <button type="button" class="pf-per-btn" data-per="3m" aria-pressed="false">3 mois</button>
-      <button type="button" class="pf-per-btn" data-per="6m" aria-pressed="false">6 mois</button>
-      <button type="button" class="pf-per-btn" data-per="ytd" aria-pressed="false">Cette annee</button>
-      <button type="button" class="pf-per-btn" data-per="1a" aria-pressed="false">1 an</button>
-      <button type="button" class="pf-per-btn" data-per="5a" aria-pressed="false">5 ans</button>
+      <button type="button" class="pf-per-btn" data-per="1j" aria-pressed="true">1J</button>
+      <button type="button" class="pf-per-btn" data-per="5j" aria-pressed="false">5J</button>
+      <button type="button" class="pf-per-btn" data-per="1m" aria-pressed="false">1M</button>
+      <button type="button" class="pf-per-btn" data-per="6m" aria-pressed="false">6M</button>
+      <button type="button" class="pf-per-btn" data-per="ytd" aria-pressed="false">Debut annee</button>
+      <button type="button" class="pf-per-btn" data-per="1a" aria-pressed="false">1AN</button>
+      <button type="button" class="pf-per-btn" data-per="5a" aria-pressed="false">5ANS</button>
       <button type="button" class="pf-per-btn" data-per="tout" aria-pressed="false">MAX</button>
     </div>
     </div>
@@ -676,15 +679,13 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
     <div class="pf-sub" data-draw="detail-sous">—</div>
   <div class="pf-per" id="periode" style="margin-top: var(--cds-gap-md)">
     <div class="pf-per-btns" role="group" aria-label="Période">
-      <button type="button" class="pf-per-btn" data-per="1j" aria-pressed="true">24 h</button>
-      <button type="button" class="pf-per-btn" data-per="2j" aria-pressed="false">48 h</button>
-      <button type="button" class="pf-per-btn" data-per="7j" aria-pressed="false">7 jours</button>
-      <button type="button" class="pf-per-btn" data-per="1m" aria-pressed="false">1 mois</button>
-      <button type="button" class="pf-per-btn" data-per="3m" aria-pressed="false">3 mois</button>
-      <button type="button" class="pf-per-btn" data-per="6m" aria-pressed="false">6 mois</button>
-      <button type="button" class="pf-per-btn" data-per="ytd" aria-pressed="false">Cette annee</button>
-      <button type="button" class="pf-per-btn" data-per="1a" aria-pressed="false">1 an</button>
-      <button type="button" class="pf-per-btn" data-per="5a" aria-pressed="false">5 ans</button>
+      <button type="button" class="pf-per-btn" data-per="1j" aria-pressed="true">1J</button>
+      <button type="button" class="pf-per-btn" data-per="5j" aria-pressed="false">5J</button>
+      <button type="button" class="pf-per-btn" data-per="1m" aria-pressed="false">1M</button>
+      <button type="button" class="pf-per-btn" data-per="6m" aria-pressed="false">6M</button>
+      <button type="button" class="pf-per-btn" data-per="ytd" aria-pressed="false">Debut annee</button>
+      <button type="button" class="pf-per-btn" data-per="1a" aria-pressed="false">1AN</button>
+      <button type="button" class="pf-per-btn" data-per="5a" aria-pressed="false">5ANS</button>
       <button type="button" class="pf-per-btn" data-per="tout" aria-pressed="false">MAX</button>
     </div>
   </div>
@@ -732,6 +733,8 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
   <section class="pf-section" id="actions" aria-labelledby="titre-actions">
     <h2 class="pf-section-title" id="titre-actions">Mes actions</h2>
     <div class="pf-tablewrap" data-draw="table"></div>
+    <h3 class="pf-h3">A venir</h3>
+    <div data-draw="avenir"></div>
   </section>
   <div class="pf-fiche" id="pf-fiche" hidden>
     <div class="pf-fiche-in">
@@ -742,20 +745,18 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
       <div data-draw="fiche-tuiles"></div>
       <div class="pf-per" style="margin-top: 14px">
         <div class="pf-per-btns" role="group" aria-label="Periode">
-          <button type="button" class="pf-per-btn" data-per="1j" aria-pressed="true">24 h</button>
-          <button type="button" class="pf-per-btn" data-per="2j" aria-pressed="false">48 h</button>
-          <button type="button" class="pf-per-btn" data-per="7j" aria-pressed="false">7 jours</button>
-          <button type="button" class="pf-per-btn" data-per="1m" aria-pressed="false">1 mois</button>
-          <button type="button" class="pf-per-btn" data-per="3m" aria-pressed="false">3 mois</button>
-          <button type="button" class="pf-per-btn" data-per="6m" aria-pressed="false">6 mois</button>
-      <button type="button" class="pf-per-btn" data-per="ytd" aria-pressed="false">Cette annee</button>
-          <button type="button" class="pf-per-btn" data-per="1a" aria-pressed="false">1 an</button>
-      <button type="button" class="pf-per-btn" data-per="5a" aria-pressed="false">5 ans</button>
-          <button type="button" class="pf-per-btn" data-per="tout" aria-pressed="false">MAX</button>
-        </div>
+      <button type="button" class="pf-per-btn" data-per="1j" aria-pressed="true">1J</button>
+      <button type="button" class="pf-per-btn" data-per="5j" aria-pressed="false">5J</button>
+      <button type="button" class="pf-per-btn" data-per="1m" aria-pressed="false">1M</button>
+      <button type="button" class="pf-per-btn" data-per="6m" aria-pressed="false">6M</button>
+      <button type="button" class="pf-per-btn" data-per="ytd" aria-pressed="false">Debut annee</button>
+      <button type="button" class="pf-per-btn" data-per="1a" aria-pressed="false">1AN</button>
+      <button type="button" class="pf-per-btn" data-per="5a" aria-pressed="false">5ANS</button>
+      <button type="button" class="pf-per-btn" data-per="tout" aria-pressed="false">MAX</button>
+    </div>
       </div>
-      <div class="pf-chart" data-draw="chart" data-source="historique"></div>
-      <p class="pf-note-s">Ligne pointillee : ce que tu as investi. Les 🤑 sont tes achats. Bouge le doigt sur la courbe pour voir chaque jour.</p>
+      <div class="pf-chart" data-draw="cours-chart"></div>
+      <p class="pf-note-s" data-draw="cours-note"></p>
     </div>
   </div>
 
@@ -815,6 +816,8 @@ window.pfDate = function (s) {
   const t = String(s).trim();
   let m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return m[1] + '-' + m[2] + '-' + m[3];
+  m = t.match(/^(\d{5})(?:[.,]\d+)?$/); // date en nombre de jours (format tableur)
+  if (m) return new Date(Date.UTC(1899, 11, 30) + Number(m[1]) * 864e5).toISOString().slice(0, 10);
   m = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/);
   if (m) return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
   return null;
@@ -882,6 +885,23 @@ dash.loader('histo_gs', {
   }
 });
 
+dash.loader('cours5_gs', {
+  description: "Lit l'onglet « Cours5APub » : cours de cloture chaque semaine sur 5 ans, pour chaque action (comme Google Finance pour 5 ans / MAX).",
+  fn: ({answer}) => {
+    const v = window.pfValues(answer);
+    const head = v[0] || [];
+    const rows = [];
+    for (let c = 0; c < head.length; c += 3) {
+      const sym = head[c]; if (!sym) continue;
+      for (let i = 2; i < v.length; i++) {
+        const r = v[i] || []; const d = window.pfDate(r[c]); const x = window.pfNum(r[c + 1]);
+        if (d && x != null) rows.push({ticker: sym, date: d, close: x});
+      }
+    }
+    return {data: rows, columns: ['ticker', 'date', 'close']};
+  }
+});
+
 dash.loader('marche_gs', {
   description: "Lit l'onglet « Marché » : S&P 500, Nasdaq 100, SMI et VIX, avec leur variation du jour, sur 1 mois et l'écart à leur plus haut sur 1 an (en %).",
   fn: ({answer}) => {
@@ -891,7 +911,7 @@ dash.loader('marche_gs', {
       const r = v[i] || [];
       if (!r[1]) continue;
       const pc = (x) => (N(x) == null ? null : Math.round(N(x) * 10000) / 100);
-      rows.push({indice: r[0], ticker: r[1], niveau: N(r[2]), jour: pc(r[3]), mois: pc(r[5]), plus_haut: N(r[6]), ecart: pc(r[7])});
+      rows.push({indice: r[0], ticker: r[1], niveau: N(r[2]) || null, jour: pc(r[3]), mois: pc(r[5]), plus_haut: N(r[6]), ecart: pc(r[7]), site: (r[8] || '').trim(), devise: (r[9] || '').trim(), avenir: (r[10] || '').trim() === 'avenir' ? 1 : 0});
     }
     return {data: rows, columns: ['indice', 'ticker', 'niveau', 'jour', 'mois', 'plus_haut', 'ecart']};
   }
@@ -1091,7 +1111,7 @@ dash.calc('periodes', {
     const eur = total[0].eurchf, usd = total[0].usdchf;
     const ago = (n) => { const d = new Date(); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
     const ytd = Math.max(1, Math.round((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 1)) / 864e5));
-    const P = [['1j', 1], ['2j', 2], ['7j', 7], ['1m', 30], ['3m', 91], ['6m', 182], ['ytd', ytd], ['1a', 365], ['5a', 1826], ['tout', null]];
+    const P = [['1j', 1], ['5j', 5], ['1m', 30], ['6m', 182], ['ytd', ytd], ['1a', 365], ['5a', 1826], ['tout', null]];
     const today = new Date().toISOString().slice(0, 10);
     const r2 = (x) => Math.round(x * 100) / 100;
     const subj = [{symbol: 'TOTAL', v: total[0].valeur_chf, i: total[0].investi_chf, manuel: 0}].concat(lignes.map((l) => ({symbol: l.symbol, v: l.valeur_chf, i: l.investi_chf, manuel: l.manuel})));
@@ -1103,8 +1123,8 @@ dash.calc('periodes', {
         let vs = 0, is = 0, depuis = first;
         if (n != null) {
           let st = null, lim;
-          if (n <= 2) {
-            // 24 h = depuis la dernière clôture, 48 h = depuis l'avant-dernière (jours de bourse)
+          if (key === '1j' || key === '5j') {
+            // 1J = depuis la derniere cloture, 5J = depuis 5 seances (jours de bourse), comme Google
             let past = rows.filter((r) => r.date < today);
             // bourse fermée depuis la dernière clôture : on compare avec la séance d'avant
             if (past.length > 1 && s.v && Math.abs(s.v - past[past.length - 1].valeur_chf) <= Math.max(0.01, 0.0005 * s.v)) past = past.slice(0, -1);
@@ -1135,8 +1155,8 @@ window.pfState = window.pfState || {cur: 'CHF', sel: null, proj: 'TOTAL', per: '
 if (!window.pfState.per) window.pfState.per = '1j';
 if (!window.pfState.proj) window.pfState.proj = 'TOTAL';
 if (!window.pfState.cur) window.pfState.cur = 'CHF';
-window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'pie-pays', 'pie-secteur', 'pie-action', 'vs-tuiles', 'vs-chart', 'fiche-tuiles'].forEach((n) => dash.draw(n)); };
-window.pfPerTxt = {'1j': '24 h', '2j': '48 h', '7j': '7 jours', '1m': '1 mois', '3m': '3 mois', '6m': '6 mois', 'ytd': 'le 1er janvier', '1a': '1 an', '5a': '5 ans', 'tout': 'le début'};
+window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'pie-pays', 'pie-secteur', 'pie-action', 'vs-tuiles', 'vs-chart', 'fiche-tuiles', 'cours-chart', 'cours-note', 'avenir'].forEach((n) => dash.draw(n)); };
+window.pfPerTxt = {'1j': '24 h', '5j': '5 jours', '1m': '1 mois', '6m': '6 mois', 'ytd': 'le 1er janvier', '1a': '1 an', '5a': '5 ans', 'tout': 'le debut'};
 document.querySelectorAll('.pf-per-btn').forEach((b) => b.addEventListener('click', () => {
   window.pfState.per = b.getAttribute('data-per');
   document.querySelectorAll('.pf-per-btn').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
@@ -1368,7 +1388,8 @@ dash.draw('detail-titre', (el) => {
   if (!sel) { el.textContent = 'Evolution'; return; }
   const l = dash.data('lignes');
   const row = l.status === 'ok' && l.data ? l.data.find((x) => x.symbol === sel) : null;
-  el.textContent = row ? row.nom : sel;
+  const mk = dash.data('marche_gs'); const w = !row && mk.data ? mk.data.find((x) => x.ticker === sel) : null;
+  el.textContent = row ? row.nom : w ? w.indice : sel;
 });
 dash.draw('detail-sous', (el) => {
   const sel = window.pfState.sel;
@@ -1505,7 +1526,7 @@ dash.draw('chart', (el) => {
   // 24 h / 48 h : un point par heure grâce aux relevés horaires, plus les relevés gardés par l'appli (toutes les 5 min quand elle est ouverte)
   const per = window.pfState.per;
   let intraday = false, ser = series;
-  if ((per === '1j' || per === '2j') && depuis) {
+  if ((per === '1j' || per === '5j') && depuis) {
     const su = dash.data('suivi_gs');
     const nowD = new Date();
     const naive = (d) => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes()));
@@ -1892,9 +1913,18 @@ dash.draw('proj-chart', (el) => {
 <script>
 dash.draw('fiche-tuiles', (box) => {
   const sel = window.pfState.sel; if (!sel) { box.replaceChildren(); return; }
-  const l = dash.data('lignes'); const row = l.status === 'ok' && l.data ? l.data.find((x) => x.symbol === sel) : null;
+  const l = dash.data('lignes'); let row = l.status === 'ok' && l.data ? l.data.find((x) => x.symbol === sel) : null;
+  if (!row) { const mk = dash.data('marche_gs'); row = mk.data ? mk.data.find((x) => x.ticker === sel && x.avenir) : null; }
   if (!row) { box.replaceChildren(); return; }
   const F = window.pfFmt, cur = window.pfState.cur, per = window.pfState.per, k = F.key[cur];
+  if (row.avenir) {
+    const g0 = document.createElement('div'); g0.className = 'pf-dtiles';
+    const t1 = document.createElement('div'); t1.className = 'pf-dtile'; t1.innerHTML = '<div class="pf-dtile-n">Pas encore achetee</div>';
+    const v1 = document.createElement('div'); v1.className = 'pf-dtile-v'; v1.textContent = row.niveau != null ? row.niveau.toFixed(2).replace('.', ',') + ' ' + (F.sym[row.devise] || row.devise) : 'pas encore cotee'; t1.append(v1);
+    const t2 = document.createElement('div'); t2.className = 'pf-dtile'; t2.innerHTML = '<div class="pf-dtile-n">Aujourd hui</div>';
+    const v2 = document.createElement('div'); v2.className = 'pf-dtile-v ' + (row.jour >= 0 ? 'pf-up' : 'pf-down'); v2.textContent = row.jour != null ? F.pct(row.jour) : '-'; t2.append(v2);
+    g0.append(t1, t2); box.replaceChildren(g0); return;
+  }
   const pr = window.pfPerRow(sel) || {};
   const mk = (n, v, cls, s, scls) => { const c = document.createElement('div'); c.className = 'pf-dtile';
     const a = document.createElement('div'); a.className = 'pf-dtile-n'; a.textContent = n;
@@ -1927,15 +1957,160 @@ dash.draw('fiche-tuiles', (box) => {
     const tot = t.data[0];
     if (last && Math.abs(last.v.TOTAL - tot.valeur_chf) < 0.005) return; // bourse fermee : rien ne bouge
     const v = {TOTAL: tot.valeur_chf}, i = {TOTAL: tot.investi_chf};
-    for (const r of l.data) if (r.valeur_chf != null) { v[r.symbol] = r.valeur_chf; i[r.symbol] = r.investi_chf; }
-    all.push({ts, v, i});
+    const p = {};
+    for (const r of l.data) if (r.valeur_chf != null) { v[r.symbol] = r.valeur_chf; i[r.symbol] = r.investi_chf; if (r.prix != null) p[r.symbol] = r.prix; }
+    const mk = dash.data('marche_gs'); for (const w of (mk.data || [])) if (w.avenir && w.niveau != null) p[w.ticker] = w.niveau;
+    all.push({ts, v, i, p});
     const lim = stamp(new Date(now.getTime() - 4 * 864e5));
     all = all.filter((s) => s.ts >= lim).slice(-1500);
     try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {}
   };
+  window.pfSnapPrices = function (sym) {
+    return load().filter((s) => s.p && s.p[sym] != null).map((s) => ({ts: s.ts, p: s.p[sym]}));
+  };
   window.pfSnaps = function (sym) {
     return load().filter((s) => s.v[sym] != null).map((s) => ({symbol: sym, ts: s.ts, valeur_chf: s.v[sym], investi_chf: s.i[sym]}));
   };
+})();
+</script>
+
+<script>
+// ---------- courbe du cours d'une action, comme Google Finance ----------
+(function () {
+  const ago = (n) => { const d = new Date(); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
+  const stamp = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  const info = (sym) => {
+    const l = dash.data('lignes'); const row = l.status === 'ok' && l.data ? l.data.find((x) => x.symbol === sym) : null;
+    if (row) return {nom: row.nom, prix: row.prix, devise: row.cotee || row.devise, pm: row.prix_moyen, pmDev: row.devise, q: row.quantite, own: 1, jour: row.jour};
+    const mk = dash.data('marche_gs'); const w = mk.data ? mk.data.find((x) => x.ticker === sym) : null;
+    if (w) return {nom: w.indice, prix: w.niveau, devise: w.devise || 'CHF', own: 0, jour: w.jour};
+    return null;
+  };
+  window.pfCoursSeries = function (sym, per) {
+    const it = info(sym); if (!it) return null;
+    const hi = dash.data('histo_gs'), c5 = dash.data('cours5_gs');
+    const daily = (hi.data || []).filter((r) => r.ticker === sym).sort((a, b) => (a.date < b.date ? -1 : 1));
+    const weekly = (c5.data || []).filter((r) => r.ticker === sym).sort((a, b) => (a.date < b.date ? -1 : 1));
+    const today = new Date().toISOString().slice(0, 10);
+    const pD = d3.utcParse('%Y-%m-%d'), pT = d3.utcParse('%Y-%m-%d %H:%M');
+    let pts = [], intraday = false, base = null;
+    if (per === '1j' || per === '5j') {
+      let past = daily.filter((r) => r.date < today);
+      if (past.length > 1 && it.prix && Math.abs(it.prix - past[past.length - 1].close) <= 0.0005 * it.prix) past = past.slice(0, -1);
+      const n = per === '1j' ? 1 : 5;
+      const st = past[past.length - n] || past[0];
+      if (st) {
+        base = st;
+        pts.push({d: new Date(pD(st.date).getTime() + 22 * 3600e3), p: st.close, close: 1});
+        // seances completes du 5J (une valeur par jour)
+        for (const r of past) if (r.date > st.date) pts.push({d: new Date(pD(r.date).getTime() + 22 * 3600e3), p: r.close});
+        // points de la journee : releves horaires + releves de l'appli
+        const snaps = (window.pfSnapPrices ? window.pfSnapPrices(sym) : []);
+        const su = dash.data('suivi_gs');
+        const hourly = it.own && it.q ? (su.data || []).filter((r) => r.symbol === sym).map((r) => ({ts: r.ts, p: r.valeur_chf})) : [];
+        const lastClose = past[past.length - 1];
+        const conv = it.own && it.q && lastClose ? (() => { const ref = (dash.data('lignes').data || []).find((x) => x.symbol === sym); return ref && ref.valeur_chf ? it.prix / ref.valeur_chf : null; })() : null;
+        for (const s of snaps) if (s.ts.slice(0, 10) > st.date) pts.push({d: pT(s.ts), p: s.p});
+        if (conv) for (const s of hourly) if (s.ts.slice(0, 10) > st.date) pts.push({d: pT(s.ts), p: s.p * conv});
+      }
+      intraday = true;
+    } else {
+      const lim = {'1m': ago(30), '6m': ago(182), 'ytd': new Date().getUTCFullYear() + '-01-01', '1a': ago(365), '5a': ago(1826), 'tout': '0000'}[per];
+      const src = per === '5a' || per === 'tout' ? weekly.concat(daily.filter((r) => !weekly.length || r.date > weekly[weekly.length - 1].date)) : daily;
+      const rows = src.filter((r) => r.date >= lim);
+      base = src.filter((r) => r.date < lim).slice(-1)[0] || rows[0];
+      pts = rows.map((r) => ({d: pD(r.date), p: r.close}));
+    }
+    if (it.prix != null) pts.push({d: new Date(Date.UTC(...(() => { const n = new Date(); return [n.getFullYear(), n.getMonth(), n.getDate(), n.getHours(), n.getMinutes()]; })())), p: it.prix, now: 1});
+    pts = pts.filter((s) => s.d && s.p != null).sort((a, b) => a.d - b.d);
+    // achats (prix d'achat en devise de cotation)
+    const ach = it.own ? (dash.data('achats_gs').data || []).filter((a) => a.ticker === sym) : [];
+    return {it, pts, intraday, base: base ? base.close : (pts[0] && pts[0].p), ach};
+  };
+  dash.draw('cours-chart', (el) => {
+    const sym = window.pfState.sel; el.replaceChildren(); if (!sym) return;
+    const S = window.pfCoursSeries(sym, window.pfState.per || '1j');
+    if (!S || S.pts.length < 2) { const p = document.createElement('p'); p.className = 'pf-fail'; p.textContent = S && S.it && S.it.prix == null ? "Pas encore cotee en bourse : la courbe apparaitra des le premier jour de cotation." : 'Pas encore assez de cours pour cette periode.'; el.append(p); return; }
+    const F = window.pfFmt, it = S.it, sym$ = F.sym[it.devise] || it.devise;
+    const pts = S.pts, first = S.base, last = pts[pts.length - 1].p;
+    const up = last >= first; const col = up ? '#5fe3a1' : '#ff7070';
+    const fmtP = (v) => v.toFixed(2).replace('.', ',') + ' ' + sym$;
+    // en-tete comme Google : cours + variation sur la periode
+    const head = document.createElement('div'); head.className = 'pf-cours-head';
+    const big = document.createElement('div'); big.className = 'pf-cours-big'; big.textContent = fmtP(last);
+    const chg = document.createElement('div'); chg.className = up ? 'pf-up' : 'pf-down';
+    const dv = last - first, dp = first ? dv / first * 100 : 0;
+    chg.textContent = (dv >= 0 ? '+' : '-') + Math.abs(dv).toFixed(2).replace('.', ',') + ' ' + sym$ + '  (' + F.pct(dp) + ')  ' + (window.pfState.per === 'tout' ? 'max' : 'depuis ' + window.pfPerTxt[window.pfState.per]);
+    head.append(big, chg);
+    const tip = document.createElement('div'); tip.className = 'pf-readout';
+    el.append(head, tip);
+    const W = Math.max(280, el.clientWidth || 600), H = 300;
+    const vals = pts.map((s) => s.p).concat([first]); if (it.own && it.pm && it.pmDev === it.devise) vals.push(it.pm);
+    const ext = d3.extent(vals); const pad = Math.max((ext[1] - ext[0]) * 0.1, ext[1] * 0.002);
+    const y = d3.scaleLinear().domain([ext[0] - pad, ext[1] + pad]).nice(5);
+    const m = {t: 10, r: 14, b: 26, l: 52};
+    const x = d3.scaleUtc().domain(d3.extent(pts, (s) => s.d)).range([m.l, W - m.r]); y.range([H - m.b, m.t]);
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`);
+    svg.append('g').attr('transform', `translate(${m.l},0)`).call(d3.axisLeft(y).ticks(5).tickSize(-(W - m.l - m.r)).tickFormat((v) => new Intl.NumberFormat('fr-CH', {maximumFractionDigits: v < 10 ? 2 : 0}).format(v))).call((g) => g.selectAll('line').style('opacity', 0.15)).call((g) => g.select('.domain').remove());
+    const per = window.pfState.per;
+    const tf = S.intraday ? (per === '5j' ? window.pfFr.utcFormat('%a %-d') : window.pfFr.utcFormat('%H h')) : per === '5a' || per === 'tout' ? window.pfFr.utcFormat('%Y') : per === '1a' || per === 'ytd' || per === '6m' ? window.pfFr.utcFormat('%b') : window.pfFr.utcFormat('%-d %b');
+    svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((W - m.l) / 90))).tickSize(0).tickPadding(8).tickFormat(tf)).call((g) => g.select('.domain').remove());
+    const uid = 'c' + Math.random().toString(36).slice(2, 8);
+    const gr = svg.append('defs').append('linearGradient').attr('id', uid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+    gr.append('stop').attr('offset', '0%').attr('stop-color', col).attr('stop-opacity', 0.35); gr.append('stop').attr('offset', '100%').attr('stop-color', col).attr('stop-opacity', 0);
+    const cv = S.intraday ? d3.curveLinear : d3.curveMonotoneX;
+    svg.append('path').datum(pts).attr('fill', `url(#${uid})`).attr('d', d3.area().curve(cv).x((s) => x(s.d)).y0(H - m.b).y1((s) => y(s.p)));
+    if (S.intraday) {
+      svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(first)).attr('y2', y(first)).style('stroke', '#bbb').style('stroke-dasharray', '1 4');
+      svg.append('text').attr('x', W - m.r).attr('y', y(first) - 5).attr('text-anchor', 'end').style('fill', '#bbb').style('font-size', '10px').text('Clot. prec. ' + fmtP(first));
+    }
+    if (it.own && it.pm && it.pmDev === it.devise) {
+      svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(it.pm)).attr('y2', y(it.pm)).style('stroke', '#888').style('stroke-dasharray', '5 4');
+      svg.append('text').attr('x', m.l + 4).attr('y', y(it.pm) - 5).style('fill', '#aaa').style('font-size', '10px').text('Ton prix moyen ' + fmtP(it.pm));
+    }
+    svg.append('path').datum(pts).attr('fill', 'none').style('stroke', col).style('stroke-width', 2).attr('d', d3.line().curve(cv).x((s) => x(s.d)).y((s) => y(s.p)));
+    const dom = x.domain();
+    const buys = S.ach.map((a) => ({d: d3.utcParse('%Y-%m-%d')(a.date), p: a.prix})).filter((b) => b.d >= dom[0] && b.d <= dom[1] && it.pmDev === it.devise);
+    svg.selectAll('text.buy').data(buys).join('text').attr('x', (b) => x(b.d)).attr('y', (b) => y(b.p)).attr('text-anchor', 'middle').attr('dominant-baseline', 'central').style('font-size', '9px').style('pointer-events', 'none').text('\u{1F911}');
+    const guide = svg.append('line').attr('y1', m.t).attr('y2', H - m.b).style('stroke', '#fff').style('opacity', 0.5);
+    const dot = svg.append('circle').attr('r', 5).style('fill', col).style('stroke', '#000').style('stroke-width', 2);
+    const bis = d3.bisector((s) => s.d).center;
+    const fD = S.intraday ? window.pfFr.utcFormat('%-d %b, %H:%M') : window.pfLongDate;
+    const showAt = (s) => {
+      guide.attr('x1', x(s.d)).attr('x2', x(s.d)); dot.attr('cx', x(s.d)).attr('cy', y(s.p));
+      const a = document.createElement('div'); a.className = 'pf-tip-d'; a.textContent = s.now ? 'Maintenant' : s.close ? 'Cloture du ' + window.pfLongDate(s.d) : fD(s.d);
+      const b = document.createElement('div'); b.textContent = 'Cours : ' + fmtP(s.p);
+      const dd = s.p - first; const c = document.createElement('div'); c.className = dd >= 0 ? 'pf-up' : 'pf-down'; c.textContent = (dd >= 0 ? '+' : '-') + Math.abs(dd).toFixed(2).replace('.', ',') + ' ' + sym$ + ' (' + F.pct(first ? dd / first * 100 : 0) + ')';
+      tip.replaceChildren(a, b, c);
+    };
+    svg.append('rect').attr('x', m.l).attr('y', 0).attr('width', W - m.l - m.r).attr('height', H).style('fill', 'transparent').style('touch-action', 'pan-y')
+      .on('pointerdown pointermove', (ev) => { const [px] = d3.pointer(ev, svg.node()); showAt(pts[bis(pts, x.invert(px))]); })
+      .on('pointerleave', (ev) => { if (ev.pointerType === 'mouse') showAt(pts[pts.length - 1]); });
+    showAt(pts[pts.length - 1]);
+  });
+  dash.draw('cours-note', (el) => {
+    const per = window.pfState.per;
+    el.textContent = per === '1j' || per === '5j' ? "Cours de l'action. Dans la journee : un point par heure, plus un toutes les 5 min quand l'appli est ouverte (cours avec environ 20 min de retard)."
+      : per === '5a' || per === 'tout' ? "Cours de l'action : un point par semaine sur 5 ans (MAX = 5 ans)." : "Cours de l'action : un point par jour de bourse. Ligne grise : ton prix moyen. 🤑 : tes achats.";
+  });
+  // ---------- liste "a venir" ----------
+  dash.draw('avenir', (box) => {
+    const mk = dash.data('marche_gs'); const ws = (mk.data || []).filter((x) => x.avenir);
+    if (!ws.length) { box.replaceChildren(); return; }
+    const F = window.pfFmt;
+    const t = document.createElement('table'); t.className = 'pf-table pf-avenir'; const tb = document.createElement('tbody');
+    for (const w of ws) {
+      const tr = document.createElement('tr'); tr.className = 'pf-row'; tr.style.cursor = 'pointer';
+      const c1 = document.createElement('td');
+      const box2 = document.createElement('span'); box2.className = 'pf-logo'; const im = document.createElement('img'); im.alt = w.indice; im.referrerPolicy = 'no-referrer';
+      im.src = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(w.site) + '&sz=128'; im.onerror = () => { c1.textContent = w.indice; }; box2.append(im); c1.append(box2);
+      const c2 = document.createElement('td'); c2.textContent = w.indice;
+      const c3 = document.createElement('td'); c3.textContent = w.niveau != null ? w.niveau.toFixed(2).replace('.', ',') + ' ' + (F.sym[w.devise] || w.devise) : 'bientot';
+      const c4 = document.createElement('td'); c4.textContent = w.jour != null && w.niveau != null ? F.pct(w.jour) : '-'; if (w.jour != null) c4.className = w.jour >= 0 ? 'pf-up' : 'pf-down';
+      tr.append(c1, c2, c3, c4); tr.addEventListener('click', () => window.pfSelect(w.ticker)); tb.append(tr);
+    }
+    t.append(tb); box.replaceChildren(t);
+  });
 })();
 </script>
 <script>

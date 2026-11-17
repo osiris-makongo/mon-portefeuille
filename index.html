@@ -569,6 +569,13 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 .pf .pf-pie-det-r > span:nth-child(3), .pf .pf-pie-det-r > span:nth-child(4) { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .pf .pf-pie-det-n { font-size: 12px; }
 .pf .pf-pie-det-s { font-size: 12px; opacity: .7; }
+
+/* fiche d'une action (ecran Actions) */
+.pf .pf-fiche { position: fixed; inset: 0 0 calc(56px + env(safe-area-inset-bottom)); z-index: 4; overflow-y: auto; background: #000; }
+.pf .pf-fiche-in { width: min(100%, 1040px); margin: 0 auto; box-sizing: border-box; padding: max(18px, env(safe-area-inset-top)) 18px 30px; }
+.pf .pf-fiche-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.pf .pf-fiche .pf-dtiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 700px) { .pf .pf-fiche .pf-dtiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 </style>
 
 <div id="pf-intro"><span>John Rockefeller</span></div>
@@ -714,6 +721,29 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
     <h2 class="pf-section-title" id="titre-actions">Mes actions</h2>
     <div class="pf-tablewrap" data-draw="table"></div>
   </section>
+  <div class="pf-fiche" id="pf-fiche" hidden>
+    <div class="pf-fiche-in">
+      <div class="pf-fiche-top">
+        <h2 class="pf-h2" data-draw="detail-titre">-</h2>
+        <button type="button" class="pf-back" id="pf-fiche-close">Fermer</button>
+      </div>
+      <div data-draw="fiche-tuiles"></div>
+      <div class="pf-per" style="margin-top: 14px">
+        <div class="pf-per-btns" role="group" aria-label="Periode">
+          <button type="button" class="pf-per-btn" data-per="1j" aria-pressed="true">24 h</button>
+          <button type="button" class="pf-per-btn" data-per="2j" aria-pressed="false">48 h</button>
+          <button type="button" class="pf-per-btn" data-per="7j" aria-pressed="false">7 jours</button>
+          <button type="button" class="pf-per-btn" data-per="1m" aria-pressed="false">1 mois</button>
+          <button type="button" class="pf-per-btn" data-per="3m" aria-pressed="false">3 mois</button>
+          <button type="button" class="pf-per-btn" data-per="6m" aria-pressed="false">6 mois</button>
+          <button type="button" class="pf-per-btn" data-per="1a" aria-pressed="false">1 an</button>
+          <button type="button" class="pf-per-btn" data-per="tout" aria-pressed="false">Le debut</button>
+        </div>
+      </div>
+      <div class="pf-chart" data-draw="chart" data-source="historique"></div>
+      <p class="pf-note-s">Ligne pointillee : ce que tu as investi. Les 🤑 sont tes achats. Bouge le doigt sur la courbe pour voir chaque jour.</p>
+    </div>
+  </div>
 
       </div>
     </section>
@@ -1090,7 +1120,7 @@ window.pfState = window.pfState || {cur: 'CHF', sel: null, proj: 'TOTAL', per: '
 if (!window.pfState.per) window.pfState.per = '1j';
 if (!window.pfState.proj) window.pfState.proj = 'TOTAL';
 if (!window.pfState.cur) window.pfState.cur = 'CHF';
-window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'pie-pays', 'pie-secteur', 'pie-action', 'vs-tuiles', 'vs-chart'].forEach((n) => dash.draw(n)); };
+window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'pie-pays', 'pie-secteur', 'pie-action', 'vs-tuiles', 'vs-chart', 'fiche-tuiles'].forEach((n) => dash.draw(n)); };
 window.pfPerTxt = {'1j': '24 h', '2j': '48 h', '7j': '7 jours', '1m': '1 mois', '3m': '3 mois', '6m': '6 mois', '1a': '1 an', 'tout': 'le début'};
 document.querySelectorAll('.pf-per-btn').forEach((b) => b.addEventListener('click', () => {
   window.pfState.per = b.getAttribute('data-per');
@@ -1119,12 +1149,25 @@ document.querySelectorAll('.pf-cur-btn').forEach((b) => {
     window.pfRedraw();
   });
 });
+document.querySelectorAll('#pf-fiche-close').forEach((b) => b.addEventListener('click', () => {
+  document.getElementById('pf-fiche').hidden = true; window.pfState.sel = null; window.pfState.proj = 'TOTAL';
+  document.querySelectorAll('#retour').forEach((x) => { x.hidden = true; }); window.pfRedraw();
+}));
 document.querySelectorAll('#retour').forEach((b) => {
   b.addEventListener('click', () => { window.pfState.sel = null; b.hidden = true; window.pfRedraw(); });
 });
 window.pfSelect = function (sym) {
   window.pfState.sel = sym;
   window.pfState.proj = sym || 'TOTAL';
+  const fiche = document.getElementById('pf-fiche');
+  const surActions = document.querySelector('#ecran-actions.pf-on');
+  if (fiche && surActions) {
+    fiche.hidden = !sym;
+    document.querySelectorAll('#retour').forEach((b) => { b.hidden = !sym; });
+    window.pfRedraw();
+    if (sym) fiche.scrollTop = 0;
+    return;
+  }
   if (sym) window.pfShowTab('vue');
   document.querySelectorAll('#retour').forEach((b) => { b.hidden = !sym; });
   window.pfRedraw();
@@ -1813,6 +1856,28 @@ dash.draw('proj-chart', (el) => {
   });
   window.addEventListener('resize', () => dash.draw('vs-chart'));
 })();
+</script>
+
+<script>
+dash.draw('fiche-tuiles', (box) => {
+  const sel = window.pfState.sel; if (!sel) { box.replaceChildren(); return; }
+  const l = dash.data('lignes'); const row = l.status === 'ok' && l.data ? l.data.find((x) => x.symbol === sel) : null;
+  if (!row) { box.replaceChildren(); return; }
+  const F = window.pfFmt, cur = window.pfState.cur, per = window.pfState.per, k = F.key[cur];
+  const pr = window.pfPerRow(sel) || {};
+  const mk = (n, v, cls, s, scls) => { const c = document.createElement('div'); c.className = 'pf-dtile';
+    const a = document.createElement('div'); a.className = 'pf-dtile-n'; a.textContent = n;
+    const b = document.createElement('div'); b.className = 'pf-dtile-v ' + (cls || ''); b.textContent = v; c.append(a, b);
+    if (s) { const d = document.createElement('div'); d.className = 'pf-dtile-s ' + (scls || ''); d.textContent = s; c.append(d); } return c; };
+  const g = document.createElement('div'); g.className = 'pf-dtiles';
+  const gv = row['gain_' + k], pg = pr['gain_' + per + '_' + k], pp = pr['pct_' + per];
+  g.append(
+    mk('Valeur', F.money(row['valeur_' + k], cur), '', 'cours ' + (row.prix != null ? row.prix.toFixed(2).replace('.', ',') + ' ' + (F.sym[row.devise] || row.devise) : '-')),
+    mk('Investi', F.money(row['investi_' + k], cur), '', 'prix moyen ' + (row.prix_moyen != null ? row.prix_moyen.toFixed(2).replace('.', ',') + ' ' + (F.sym[row.devise] || row.devise) : '-')),
+    mk('Depuis le debut', F.pct(row.gain_pct != null ? row.gain_pct : row.pct), (row.gain_pct != null ? row.gain_pct : row.pct) >= 0 ? 'pf-up' : 'pf-down', gv != null ? F.money(gv, cur, true) : ''),
+    mk(per === 'tout' ? 'Depuis le debut' : 'Depuis ' + window.pfPerTxt[per], pp != null ? F.pct(pp) : '-', pp >= 0 ? 'pf-up' : 'pf-down', pg != null ? F.money(pg, cur, true) : ''));
+  box.replaceChildren(g);
+});
 </script>
 <script>
 document.querySelectorAll('#pf-refresh').forEach((b) => b.addEventListener('click', () => window.pfLoad()));

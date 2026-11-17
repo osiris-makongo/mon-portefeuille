@@ -159,12 +159,19 @@ body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area
       try {
         const r = await fetch('https://docs.google.com/spreadsheets/d/e/' + key + '/pub?gid=' + gid + '&single=true&output=csv&_=' + Date.now(), {cache: 'no-store'});
         if (!r.ok) throw new Error('HTTP ' + r.status);
-        const rows = d3.csvParseRows(await r.text()).slice(SKIP[id] || 0);
+        let text = await r.text();
+        // Google renvoie parfois « Chargement en cours… » ou un historique vide : on garde alors la dernière bonne version
+        const lines = text.split('\n').length;
+        const bad = /Chargement en cours|Loading\.\.\.|#N\/A/.test(text) || (id === 'histo_gs' && lines < 10);
+        let prev = null; try { prev = localStorage.getItem('pf-csv-' + id); } catch (e) {}
+        if (bad) { window.pfNeedRetry = true; if (prev) text = prev; } else { try { localStorage.setItem('pf-csv-' + id, text); } catch (e) {} }
+        const rows = d3.csvParseRows(text).slice(SKIP[id] || 0);
         const res = L[id].fn({answer: {values: rows}});
         data[id] = {status: 'ok', data: Array.isArray(res) ? res : res.data};
       } catch (e) { console.error(id, e); if (!data[id] || data[id].status !== 'ok') data[id] = {status: 'error', data: []}; }
     }));
     computeCalcs(); runAll(); loading = false;
+    if (window.pfNeedRetry) { window.pfNeedRetry = false; setTimeout(load, 20000); }
     const ok = Object.keys(GIDS).every((id) => data[id] && data[id].status === 'ok');
     if (maj) maj.textContent = (ok ? 'Mis à jour à ' : 'Problème de connexion · dernière tentative à ') + new Date().toLocaleTimeString('fr-CH', {hour: '2-digit', minute: '2-digit'});
   }
@@ -493,6 +500,10 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
   .pf .pf-screen-content { background: rgba(0, 0, 0, 0.78) !important; }
   .pf #ecran-marche .pf-screen-content { background: linear-gradient(transparent 0, rgba(0,0,0,0.75) 30%) !important; }
 }
+
+/* --- Moins de texte (Claude) --- */
+.pf [data-draw="t-date"], .pf #tuile-investi .pf-sub, .pf [data-draw="detail-sous"], .pf [data-draw="proj-phrase"],
+.pf .pf-market-copy .pf-lede, .pf .pf-legend { display: none !important; }
 </style>
 
 <div class="pf">
@@ -532,7 +543,6 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 
   <div class="pf-panel" id="vue" role="tabpanel">
   <section class="pf-section" id="portefeuille" aria-labelledby="titre-portefeuille">
-    <h2 class="pf-section-title" id="titre-portefeuille">Mon portefeuille</h2>
   <div class="pf-tiles" id="resume">
     <div class="pf-tile" id="tuile-valeur">
       <div class="pf-lab">Valeur totale</div>
@@ -563,7 +573,6 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
     </div>
     <div class="pf-sub" data-draw="detail-sous">—</div>
   <div class="pf-per" id="periode" style="margin-top: var(--cds-gap-md)">
-    <span class="pf-per-lab">Depuis</span>
     <div class="pf-per-btns" role="group" aria-label="Période">
       <button type="button" class="pf-per-btn" data-per="1j" aria-pressed="true">24 h</button>
       <button type="button" class="pf-per-btn" data-per="2j" aria-pressed="false">48 h</button>
@@ -604,7 +613,7 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
       <p class="pf-lede" data-read lang="fr"><span data-draw="proj-phrase">—</span></p>
       <div class="pf-scen" data-draw="proj-tuiles" data-source="projection_fin" style="margin-top: var(--cds-gap-md)"></div>
       <div class="pf-chart" data-draw="proj-chart" data-source="projection"></div>
-      <p class="pf-warn">Ce sont des scénarios, pas des prévisions. Le scénario normal suppose +7 % par an, à peu près la moyenne des marchés d'actions sur le long terme. Le pessimiste et l'optimiste viennent de la façon dont l'action (ou ton portefeuille) a bougé depuis ton achat : à peu près 2 chances sur 3 de finir entre les deux, mais rien n'est garanti. Avec seulement quelques semaines d'historique, la fourchette reste approximative.</p>
+      <p class="pf-warn">Scenarios, pas des previsions.</p>
     </section>
   </div>
 
@@ -615,22 +624,9 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
       <div class="pf-screen-content" tabindex="0" aria-label="Mes actions">
   <section class="pf-section" id="actions" aria-labelledby="titre-actions">
     <h2 class="pf-section-title" id="titre-actions">Mes actions</h2>
-    <div class="pf-sub">Clique sur une ligne pour voir la courbe de cette action seule.</div>
     <div class="pf-tablewrap" data-draw="table"></div>
   </section>
-  <details class="pf-notes" id="notes">
-    <summary>Comment c'est calculé</summary>
-    <ul>
-      <li>Le % d'une action se calcule comme sur Revolut : prix du jour comparé à ton prix moyen d'achat, dans la devise de l'action, sans les frais.</li>
-      <li>Les montants en Fr, € et $ utilisent le taux de change du jour. Le gain en Fr compare la valeur d'aujourd'hui à ce que tu as payé en Fr le jour de chaque achat, donc il inclut l'effet du dollar.</li>
-      <li>Les chiffres viennent de ton tableau Google « Mon Portefeuille », qui prend les cours sur Google Finance (environ 20 minutes de retard). La page relit le tableau à chaque ouverture.</li>
-      <li>Sur 24 h et 48 h, la courbe a un point par heure : un relevé automatique note la valeur toutes les heures, du lundi au vendredi de 9 h à 22 h. Les relevés ont commencé le 16 novembre 2026 au soir.</li>
-      <li>L'humeur du marché en haut vient de l'onglet « Marché » du tableau. Calme : les grands indices sont à moins de 5 % de leur plus haut et le VIX est sous 20. Un peu agité : recul de 5 à 10 % ou VIX entre 20 et 30. Période difficile : correction de 10 à 20 % ou VIX au-dessus de 30. Forte baisse : plus de 20 % sous le plus haut.</li>
-      <li>Le gain total compte les frais Revolut. Le % de chaque action ne les compte pas, comme sur Revolut.</li>
-      <li>ETF Santé : cours de Londres en dollars, converti en euros. ETF Puces : Google ne le trouve pas, son prix se met à la main dans le tableau.</li>
-      <li>Un nouvel achat s'ajoute dans l'onglet Achats du tableau (et dans Mes actions si c'est une nouvelle action) : la page le reprend toute seule.</li>
-    </ul>
-  </details>
+
       </div>
     </section>
   </main>
@@ -1074,14 +1070,14 @@ dash.draw('t-per-sub', (el) => {
   const F = window.pfFmt, per = window.pfState.per;
   const d = r['depuis_' + per];
   el.replaceChildren(F.span(F.pct(r['pct_' + per]), 'periodes', 'pct_' + per, 'symbol=TOTAL', r['pct_' + per] >= 0 ? 'pf-up' : 'pf-down'),
-    document.createTextNode(d ? ' · depuis la clôture du ' + window.pfLongDate(d3.utcParse('%Y-%m-%d')(d)) : ''));
+    document.createTextNode(''));
 });
 
 dash.draw('t-gainpct', (el) => {
   const t = dash.data('total');
   if (t.status !== 'ok' || !t.data || !t.data.length) { el.textContent = '—'; return; }
   const r = t.data[0];
-  el.replaceChildren(window.pfFmt.span(window.pfFmt.pct(r.pct), 'total', 'pct', 0, r.pct >= 0 ? 'pf-up' : 'pf-down'), document.createTextNode(' sur ce que tu as investi'));
+  el.replaceChildren(window.pfFmt.span(window.pfFmt.pct(r.pct), 'total', 'pct', 0, r.pct >= 0 ? 'pf-up' : 'pf-down'));
 });
 
 window.pfMarche = function () {
@@ -1113,7 +1109,7 @@ dash.draw('marche-phrase', (el) => {
     const c = document.createElement('div'); c.className = 'pf-mk';
     const n = document.createElement('div'); n.className = 'pf-mk-n'; n.textContent = name;
     const v = document.createElement('div'); v.className = 'pf-mk-v'; v.append(sp(F.pct(r.ecart), r, 'ecart', r.ecart <= -10 ? 'pf-down' : r.ecart <= -5 ? '' : 'pf-up'));
-    const s = document.createElement('div'); s.className = 'pf-mk-s'; s.append(document.createTextNode(desc(r) + ' · auj. '), sp(F.pct(r.jour), r, 'jour', r.jour >= 0 ? 'pf-up' : 'pf-down'));
+    const s = document.createElement('div'); s.className = 'pf-mk-s'; s.append(document.createTextNode('auj. '), sp(F.pct(r.jour), r, 'jour', r.jour >= 0 ? 'pf-up' : 'pf-down'));
     c.append(n, v, s); cards.push(c);
   };
   card(k.sp, 'Bourse US (S&P 500)');
@@ -1166,7 +1162,7 @@ dash.draw('phrase', (el) => {
 // ---------- detail header ----------
 dash.draw('detail-titre', (el) => {
   const sel = window.pfState.sel;
-  if (!sel) { el.textContent = 'Mon portefeuille au fil des jours'; return; }
+  if (!sel) { el.textContent = 'Evolution'; return; }
   const l = dash.data('lignes');
   const row = l.status === 'ok' && l.data ? l.data.find((x) => x.symbol === sel) : null;
   el.textContent = row ? row.nom : sel;

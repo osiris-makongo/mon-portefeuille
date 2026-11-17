@@ -525,6 +525,42 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 @media (min-width: 701px) { #pf-intro { background-image: linear-gradient(180deg, rgba(0,0,0,0) 50%, #000 95%), url("portrait-fond-pc.jpg"); background-position: center; } }
 #pf-intro span { color: #fff; font: 700 1.6rem/1.2 system-ui, sans-serif; letter-spacing: .02em; }
 #pf-intro.out { opacity: 0; pointer-events: none; }
+
+.pf .pf-mk-big { grid-column: 1 / -1; }
+.pf .pf-mk-big .pf-mk-v { font-size: 1.5em; }
+.pf .pf-mk-row { display: flex; align-items: center; gap: 10px; }
+.pf .pf-mk-row .pf-logo { width: 34px; height: 34px; flex: none; }
+.pf .pf-mk-row { flex-wrap: wrap; }
+.pf .pf-mk-nom { font-size: 0.55em; width: 100%; }
+
+/* nouveaux ecrans */
+.pf .pf-h3 { font-family: var(--pf-display); font-size: clamp(14px, 3.4vw, 18px); margin: 26px 0 10px; color: #fff; letter-spacing: .04em; }
+.pf .pf-note-s { font-size: 12px; opacity: .65; margin-top: 18px; line-height: 1.5; }
+.pf .pf-dtiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.pf .pf-dtile { border: 1px solid var(--pf-border); background: #000a; padding: 12px 14px; }
+.pf .pf-dtile-n { font-size: 12px; opacity: .75; }
+.pf .pf-dtile-v { font-family: var(--pf-display); font-size: clamp(22px, 6vw, 34px); margin-top: 4px; }
+.pf .pf-dtile-s { font-size: 12px; opacity: .7; margin-top: 2px; }
+.pf .pf-months { display: grid; gap: 6px; }
+.pf .pf-mrow { display: grid; grid-template-columns: 84px 1fr 86px; align-items: center; gap: 10px; font-size: 13px; }
+.pf .pf-mbar { height: 14px; background: #ffffff14; position: relative; }
+.pf .pf-mbar span { position: absolute; inset: 0 auto 0 0; background: var(--pf-positive); box-shadow: 0 0 8px var(--pf-positive); }
+.pf .pf-mwho { grid-column: 2 / 4; font-size: 11px; opacity: .6; margin-top: -4px; }
+.pf .pf-mrow .pf-mv { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pf .pf-pie { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 18px; align-items: center; }
+.pf .pf-pie svg { width: 100%; height: auto; display: block; }
+.pf .pf-leg { display: grid; gap: 5px; font-size: 13px; }
+.pf .pf-leg-r { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; }
+.pf .pf-leg-r i { width: 12px; height: 12px; display: block; }
+.pf .pf-leg-r b .pf-leg-m { opacity: .6; margin-left: 10px; }
+.pf .pf-leg-r b { font-weight: normal; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 520px) {
+  .pf .pf-pie { grid-template-columns: 1fr; }
+  .pf .pf-pie svg { max-width: 230px; margin: 0 auto; }
+  .pf .pf-screen-nav { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+  .pf .pf-screen-nav button { font-size: clamp(7px, 1.95vw, 11px) !important; white-space: nowrap; overflow: hidden; }
+  .pf .pf-dtable th:nth-child(4), .pf .pf-dtable td:nth-child(4) { display: table-cell !important; }
+}
 </style>
 
 <div id="pf-intro"><span>John Rockefeller</span></div>
@@ -562,7 +598,13 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
   <nav class="pf-tabs" role="tablist" aria-label="Vues">
     <button type="button" class="pf-tab" role="tab" data-tab="vue" aria-selected="true">Mon portefeuille</button>
     <button type="button" class="pf-tab" role="tab" data-tab="projection" aria-selected="false">Prévision</button>
+    <button type="button" class="pf-tab" role="tab" data-tab="contre" aria-selected="false">Toi vs Monde</button>
   </nav>
+  <div class="pf-panel" id="contre" role="tabpanel" hidden>
+    <div data-draw="vs-tuiles"></div>
+    <div class="pf-chart" data-draw="vs-chart"></div>
+    <p class="pf-note-s">Monde = si chacun de tes achats avait ete mis, le meme jour et pour le meme montant, dans un ETF sur toute la bourse mondiale (MSCI World, URTH).</p>
+  </div>
 
   <div class="pf-panel" id="vue" role="tabpanel">
   <section class="pf-section" id="portefeuille" aria-labelledby="titre-portefeuille">
@@ -601,6 +643,9 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
       <button type="button" class="pf-per-btn" data-per="2j" aria-pressed="false">48 h</button>
       <button type="button" class="pf-per-btn" data-per="7j" aria-pressed="false">7 jours</button>
       <button type="button" class="pf-per-btn" data-per="1m" aria-pressed="false">1 mois</button>
+      <button type="button" class="pf-per-btn" data-per="3m" aria-pressed="false">3 mois</button>
+      <button type="button" class="pf-per-btn" data-per="6m" aria-pressed="false">6 mois</button>
+      <button type="button" class="pf-per-btn" data-per="1a" aria-pressed="false">1 an</button>
       <button type="button" class="pf-per-btn" data-per="tout" aria-pressed="false">Le début</button>
     </div>
   </div>
@@ -652,11 +697,39 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 
       </div>
     </section>
+    <section class="pf-screen" id="ecran-dividendes" aria-label="Dividendes">
+      <div class="pf-screen-content" tabindex="0" aria-label="Dividendes">
+  <section class="pf-section">
+    <h2 class="pf-section-title">Dividendes</h2>
+    <div data-draw="div-tuiles"></div>
+    <h3 class="pf-h3">Mois par mois</h3>
+    <div data-draw="div-mois"></div>
+    <h3 class="pf-h3">Par action</h3>
+    <div class="pf-tablewrap" data-draw="div-table"></div>
+    <p class="pf-note-s">Estimations a partir du dernier dividende connu. Tu peux corriger les montants dans le tableau Google, onglet Mes actions, colonnes R a W.</p>
+  </section>
+      </div>
+    </section>
+    <section class="pf-screen" id="ecran-repartition" aria-label="Repartition">
+      <div class="pf-screen-content" tabindex="0" aria-label="Repartition">
+  <section class="pf-section">
+    <h2 class="pf-section-title">Repartition</h2>
+    <h3 class="pf-h3">Par pays</h3>
+    <div data-draw="pie-pays"></div>
+    <h3 class="pf-h3">Par secteur</h3>
+    <div data-draw="pie-secteur"></div>
+    <h3 class="pf-h3">Par action</h3>
+    <div data-draw="pie-action"></div>
+  </section>
+      </div>
+    </section>
   </main>
   <nav class="pf-screen-nav" aria-label="Écrans du portefeuille">
     <button type="button" data-screen="0" aria-current="step">Marché</button>
     <button type="button" data-screen="1">Portefeuille</button>
     <button type="button" data-screen="2">Actions</button>
+    <button type="button" data-screen="3">Dividendes</button>
+    <button type="button" data-screen="4">Repartition</button>
   </nav>
 </div>
 
@@ -701,9 +774,10 @@ dash.loader('lignes_gs', {
       if (!r[0] || !r[1]) continue;
       rows.push({nom: r[0], ticker: r[1], devise: r[2] || 'USD', cotee: r[3] || r[2] || 'USD', manuel: r[4] ? 1 : 0,
         quantite: N(r[5]), prix_moyen: N(r[6]), prix: N(r[7]), pct: N(r[8]), valeur_devise: N(r[9]), taux_chf: N(r[10]),
-        valeur_chf: N(r[11]), investi_chf: N(r[12]), gain_chf: N(r[13]), gain_pct: N(r[14]), jour: N(r[15]), site: (r[16] || '').trim()});
+        valeur_chf: N(r[11]), investi_chf: N(r[12]), gain_chf: N(r[13]), gain_pct: N(r[14]), jour: N(r[15]), site: (r[16] || '').trim(),
+        pays: (r[17] || '').trim(), secteur: (r[18] || '').trim(), div: N(r[19]), div_dev: (r[20] || '').trim(), div_mois: String(r[21] || '').trim(), div_imp: N(r[22])});
     }
-    return {data: rows, columns: ['nom', 'ticker', 'devise', 'cotee', 'manuel', 'quantite', 'prix_moyen', 'prix', 'pct', 'valeur_devise', 'taux_chf', 'valeur_chf', 'investi_chf', 'gain_chf', 'gain_pct', 'jour']};
+    return {data: rows, columns: ['nom', 'ticker', 'devise', 'cotee', 'manuel', 'quantite', 'prix_moyen', 'prix', 'pct', 'valeur_devise', 'taux_chf', 'valeur_chf', 'investi_chf', 'gain_chf', 'gain_pct', 'jour', 'pays', 'secteur', 'div', 'div_dev', 'div_mois', 'div_imp']};
   }
 });
 
@@ -952,7 +1026,7 @@ dash.calc('periodes', {
     if (!hist || !hist.length || !lignes || !lignes.length || !total || !total.length) return [];
     const eur = total[0].eurchf, usd = total[0].usdchf;
     const ago = (n) => { const d = new Date(); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
-    const P = [['1j', 1], ['2j', 2], ['7j', 7], ['1m', 30], ['tout', null]];
+    const P = [['1j', 1], ['2j', 2], ['7j', 7], ['1m', 30], ['3m', 91], ['6m', 182], ['1a', 365], ['tout', null]];
     const today = new Date().toISOString().slice(0, 10);
     const r2 = (x) => Math.round(x * 100) / 100;
     const subj = [{symbol: 'TOTAL', v: total[0].valeur_chf, i: total[0].investi_chf, manuel: 0}].concat(lignes.map((l) => ({symbol: l.symbol, v: l.valeur_chf, i: l.investi_chf, manuel: l.manuel})));
@@ -996,8 +1070,8 @@ window.pfState = window.pfState || {cur: 'CHF', sel: null, proj: 'TOTAL', per: '
 if (!window.pfState.per) window.pfState.per = '1j';
 if (!window.pfState.proj) window.pfState.proj = 'TOTAL';
 if (!window.pfState.cur) window.pfState.cur = 'CHF';
-window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart'].forEach((n) => dash.draw(n)); };
-window.pfPerTxt = {'1j': '24 h', '2j': '48 h', '7j': '7 jours', '1m': '1 mois', 'tout': 'le début'};
+window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'pie-pays', 'pie-secteur', 'pie-action', 'vs-tuiles', 'vs-chart'].forEach((n) => dash.draw(n)); };
+window.pfPerTxt = {'1j': '24 h', '2j': '48 h', '7j': '7 jours', '1m': '1 mois', '3m': '3 mois', '6m': '6 mois', '1a': '1 an', 'tout': 'le début'};
 document.querySelectorAll('.pf-per-btn').forEach((b) => b.addEventListener('click', () => {
   window.pfState.per = b.getAttribute('data-per');
   document.querySelectorAll('.pf-per-btn').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
@@ -1005,7 +1079,7 @@ document.querySelectorAll('.pf-per-btn').forEach((b) => b.addEventListener('clic
 }));
 window.pfShowTab = function (id) {
   document.querySelectorAll('.pf-tab').forEach((t) => t.setAttribute('aria-selected', t.getAttribute('data-tab') === id ? 'true' : 'false'));
-  document.querySelectorAll('#vue, #projection').forEach((p) => { p.hidden = p.id !== id; });
+  document.querySelectorAll('#vue, #projection, #contre').forEach((p) => { p.hidden = p.id !== id; }); ['vs-tuiles', 'vs-chart', 'proj-chart', 'chart'].forEach((n) => dash.draw(n));
   dash.setLink(id);
 };
 document.querySelectorAll('.pf-tab').forEach((t) => t.addEventListener('click', () => window.pfShowTab(t.getAttribute('data-tab'))));
@@ -1109,11 +1183,11 @@ window.pfMarche = function () {
   const m = dash.data('marche_gs');
   if (m.status !== 'ok' || !m.data || !m.data.length) return null;
   const by = (t) => m.data.find((r) => r.ticker === t) || null;
-  const sp = by('INDEXSP:.INX'), nd = by('INDEXNASDAQ:NDX'), smi = by('INDEXSWX:SMI'), vix = by('INDEXCBOE:VIX');
+  const sp = by('INDEXSP:.INX'), nd = by('INDEXNASDAQ:NDX'), smi = by('INDEXSWX:SMI'), vix = by('INDEXCBOE:VIX'), monde = by('NYSEARCA:URTH');
   const dd = Math.min(sp && sp.ecart != null ? sp.ecart : 0, nd && nd.ecart != null ? nd.ecart : 0);
   const ddScore = dd > -5 ? 0 : dd > -10 ? 1 : dd > -20 ? 2 : 3;
   const vixScore = !vix || vix.niveau == null ? 0 : vix.niveau < 20 ? 0 : vix.niveau < 30 ? 1 : 2;
-  return {sp, nd, smi, vix, sev: Math.max(ddScore, vixScore)};
+  return {sp, nd, smi, vix, monde, sev: Math.max(ddScore, vixScore)};
 };
 dash.draw('marche-chip', (el) => {
   const k = window.pfMarche();
@@ -1129,14 +1203,17 @@ dash.draw('marche-phrase', (el) => {
   const sp = (txt, r, field, cls) => F.span(txt, 'marche_gs', field, 'ticker=' + encodeURIComponent(r.ticker), cls);
   const desc = (r) => r.ecart > -2 ? 'au plus haut' : r.ecart > -5 ? 'léger recul' : r.ecart > -10 ? 'en recul' : r.ecart > -20 ? 'en correction' : 'forte baisse';
   const cards = [];
-  const card = (r, name) => {
-    if (!r || r.ecart == null) return;
-    const c = document.createElement('div'); c.className = 'pf-mk';
+  // chiffre principal = variation du jour ; en dessous, sur 1 mois si dispo
+  const card = (r, name, big) => {
+    if (!r || r.jour == null) return;
+    const c = document.createElement('div'); c.className = 'pf-mk' + (big ? ' pf-mk-big' : '');
     const n = document.createElement('div'); n.className = 'pf-mk-n'; n.textContent = name;
-    const v = document.createElement('div'); v.className = 'pf-mk-v'; v.append(sp(F.pct(r.ecart), r, 'ecart', r.ecart <= -10 ? 'pf-down' : r.ecart <= -5 ? '' : 'pf-up'));
-    const s = document.createElement('div'); s.className = 'pf-mk-s'; s.append(document.createTextNode('auj. '), sp(F.pct(r.jour), r, 'jour', r.jour >= 0 ? 'pf-up' : 'pf-down'));
+    const v = document.createElement('div'); v.className = 'pf-mk-v'; v.append(sp(F.pct(r.jour), r, 'jour', r.jour >= 0 ? 'pf-up' : 'pf-down'));
+    const s = document.createElement('div'); s.className = 'pf-mk-s'; s.textContent = big || r.mois == null ? 'aujourd hui' : '';
+    if (!big && r.mois != null) { s.append(document.createTextNode('1 mois '), sp(F.pct(r.mois), r, 'mois', r.mois >= 0 ? 'pf-up' : 'pf-down')); }
     c.append(n, v, s); cards.push(c);
   };
+  card(k.monde, 'Bourse mondiale', true);
   card(k.sp, 'Bourse US (S&P 500)');
   card(k.nd, 'Tech US (Nasdaq)');
   card(k.smi, 'Bourse suisse (SMI)');
@@ -1147,6 +1224,29 @@ dash.draw('marche-phrase', (el) => {
     const v = document.createElement('div'); v.className = 'pf-mk-v'; v.append(sp(new Intl.NumberFormat('fr-CH', {maximumFractionDigits: 1}).format(v0), r, 'niveau', v0 >= 30 ? 'pf-down' : v0 >= 20 ? '' : 'pf-up'));
     const s = document.createElement('div'); s.className = 'pf-mk-s'; s.textContent = v0 < 15 ? 'investisseurs sereins' : v0 < 20 ? 'nervosité normale' : v0 < 30 ? 'investisseurs nerveux' : 'investisseurs inquiets';
     c.append(n, v, s); cards.push(c);
+  }
+  // tes actions du jour : meilleure et pire
+  const l = dash.data('lignes_gs');
+  const ls = (l.status === 'ok' && l.data ? l.data : []).filter((r) => r.jour != null && r.quantite);
+  if (ls.length) {
+    const srt = ls.slice().sort((a, b) => b.jour - a.jour);
+    const pick = [[srt[0], 'Ta meilleure aujourd hui'], [srt[srt.length - 1], 'Ta pire aujourd hui']];
+    if (srt.length === 1) pick.pop();
+    for (const [r, t] of pick) {
+      const p = Math.round(r.jour * 10000) / 100;
+      const c = document.createElement('div'); c.className = 'pf-mk pf-mk-act';
+      const n = document.createElement('div'); n.className = 'pf-mk-n'; n.textContent = t;
+      const v = document.createElement('div'); v.className = 'pf-mk-v pf-mk-row';
+      if (r.site) {
+        const box = document.createElement('span'); box.className = 'pf-logo';
+        const im = document.createElement('img'); im.alt = r.nom; im.referrerPolicy = 'no-referrer';
+        im.src = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(r.site) + '&sz=128';
+        im.onerror = () => { const t = document.createElement('span'); t.className = 'pf-mk-nom'; t.textContent = r.nom; box.replaceWith(t); };
+        box.append(im); v.append(box);
+      } else { const t = document.createElement('span'); t.className = 'pf-mk-nom'; t.textContent = r.nom; v.append(t); }
+      const pv = document.createElement('span'); pv.style.whiteSpace = 'nowrap'; pv.className = p >= 0 ? 'pf-up' : 'pf-down'; pv.textContent = F.pct(p); v.append(pv);
+      c.append(n, v); cards.push(c);
+    }
   }
   el.replaceChildren(...cards);
 });
@@ -1502,6 +1602,161 @@ dash.draw('proj-chart', (el) => {
 
 </div>
 
+
+<script>
+(function () {
+  const COLORS = ['#5fe3a1', '#6fb7ff', '#ffcf5c', '#ff7070', '#c792ea', '#4dd0e1', '#ff9e5e', '#a5d66f', '#f78fb3', '#9fa8da', '#e6e6e6', '#80cbc4', '#ffab91', '#b39ddb', '#90caf9', '#fff176', '#bcaaa4', '#ce93d8', '#81c784', '#e57373', '#64b5f6', '#dce775'];
+  const MOIS = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'];
+  const el = (t, c, txt) => { const e = document.createElement(t); if (c) e.className = c; if (txt != null) e.textContent = txt; return e; };
+  const waiting = (box, h) => { const p = el('div', 'dash-skeleton'); p.style.height = (h || 120) + 'px'; box.replaceChildren(p); };
+  const lines = () => { const l = dash.data('lignes_gs'); return l.status === 'ok' && l.data ? l.data.filter((r) => r.quantite && r.valeur_chf != null) : null; };
+  const rateOf = (ls) => { const r = {CHF: 1}; for (const l of ls) if (l.taux_chf && !r[l.devise]) r[l.devise] = l.taux_chf; return r; };
+  const cur = () => window.pfState.cur || 'CHF';
+  const fromChf = (v, R) => (cur() === 'CHF' ? v : v / (R[cur()] || 1));
+  const money = (v, R, d) => window.pfFmt.money(fromChf(v, R), cur(), false).replace(/\s?(CHF|€|\$)$/, '') + ({CHF: ' CHF', EUR: ' EUR', USD: ' $'})[cur()];
+  const logo = (l) => {
+    if (!l.site) return el('span', '', l.nom);
+    const b = el('span', 'pf-logo'); const im = document.createElement('img'); im.alt = l.nom; im.referrerPolicy = 'no-referrer';
+    im.src = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(l.site) + '&sz=128';
+    im.onerror = () => b.replaceWith(el('span', '', l.nom)); b.append(im); return b;
+  };
+
+  // ---------- dividendes ----------
+  const divs = (ls, R) => ls.map((l) => {
+    const dev = l.div_dev || l.devise;
+    const brut = (l.div || 0) * l.quantite * (R[dev] || 1);
+    const net = brut * (1 - (l.div_imp || 0) / 100);
+    const mois = (l.div_mois || '').split(/[^0-9]+/).map(Number).filter((m) => m >= 1 && m <= 12);
+    return {l, brut, net, mois};
+  });
+  dash.draw('div-tuiles', (box) => {
+    const ls = lines(); if (!ls) return waiting(box, 90);
+    const R = rateOf(ls), D = divs(ls, R);
+    const brut = D.reduce((s, d) => s + d.brut, 0), net = D.reduce((s, d) => s + d.net, 0);
+    const val = ls.reduce((s, l) => s + l.valeur_chf, 0);
+    const now = new Date().getMonth() + 1;
+    let next = null;
+    for (let k = 0; k < 12 && !next; k++) { const m = ((now - 1 + k) % 12) + 1; const who = D.filter((d) => d.brut > 0 && d.mois.includes(m)); if (who.length) next = {m, who}; }
+    const t = (n, v, s) => { const c = el('div', 'pf-dtile'); c.append(el('div', 'pf-dtile-n', n), el('div', 'pf-dtile-v pf-up', v)); if (s) c.append(el('div', 'pf-dtile-s', s)); return c; };
+    const g = el('div', 'pf-dtiles');
+    g.append(t('Par an, avant impots', money(brut, R), 'rendement ' + (val ? (brut / val * 100).toFixed(2).replace('.', ',') : '0') + ' %'),
+      t('Par an, apres impots', money(net, R), 'impot suisse recuperable'),
+      t('Par mois en moyenne', money(net / 12, R)));
+    if (next) g.append(t('Prochain versement', MOIS[next.m - 1], next.who.map((d) => d.l.nom).join(', ')));
+    box.replaceChildren(g);
+  });
+  dash.draw('div-mois', (box) => {
+    const ls = lines(); if (!ls) return waiting(box, 200);
+    const R = rateOf(ls), D = divs(ls, R);
+    const now = new Date();
+    const rows = [];
+    for (let k = 0; k < 12; k++) {
+      const dt = new Date(now.getFullYear(), now.getMonth() + k, 1); const m = dt.getMonth() + 1;
+      const who = D.filter((d) => d.brut > 0 && d.mois.includes(m));
+      rows.push({lab: ['janv', 'fevr', 'mars', 'avr', 'mai', 'juin', 'juil', 'aout', 'sept', 'oct', 'nov', 'dec'][m - 1] + (dt.getFullYear() !== now.getFullYear() ? ' ' + String(dt.getFullYear()).slice(2) : ''), v: who.reduce((s, d) => s + d.net / d.mois.length, 0), who});
+    }
+    const max = Math.max(...rows.map((r) => r.v), 0.01);
+    const g = el('div', 'pf-months');
+    for (const r of rows) {
+      const row = el('div', 'pf-mrow');
+      const bar = el('div', 'pf-mbar'); const s = document.createElement('span'); s.style.width = (r.v / max * 100) + '%'; bar.append(s);
+      row.append(el('div', '', r.lab), bar, el('div', 'pf-mv', r.v ? money(r.v, R) : '-'));
+      if (r.who.length) row.append(el('div', 'pf-mwho', r.who.map((d) => d.l.nom).join(', ')));
+      g.append(row);
+    }
+    box.replaceChildren(g);
+  });
+  dash.draw('div-table', (box) => {
+    const ls = lines(); if (!ls) return waiting(box, 200);
+    const R = rateOf(ls), D = divs(ls, R).sort((a, b) => b.brut - a.brut);
+    const t = el('table', 'pf-table pf-dtable'); const th = el('thead'); const trh = el('tr');
+    ['', 'Par an', 'Rendement', 'Mois'].forEach((x) => trh.append(el('th', '', x))); th.append(trh); t.append(th);
+    const tb = el('tbody');
+    for (const d of D) {
+      const tr = el('tr'); const c0 = el('td'); c0.append(logo(d.l));
+      const y = d.l.valeur_chf ? d.brut / d.l.valeur_chf * 100 : 0;
+      tr.append(c0, el('td', d.brut ? 'pf-up' : '', d.brut ? money(d.brut, R) : 'rien'), el('td', '', d.brut ? y.toFixed(1).replace('.', ',') + ' %' : '-'),
+        el('td', '', d.mois.length === 4 ? 'tous les 3 mois' : d.mois.map((m) => MOIS[m - 1].slice(0, 4)).join(', ') || '-'));
+      tb.append(tr);
+    }
+    t.append(tb); box.replaceChildren(t);
+  });
+
+  // ---------- camemberts ----------
+  const pie = (box, items, R) => {
+    items = items.filter((x) => x.v > 0).sort((a, b) => b.v - a.v);
+    const tot = items.reduce((s, x) => s + x.v, 0);
+    const wrap = el('div', 'pf-pie');
+    const S = 220, r = S / 2;
+    const svg = d3.create('svg').attr('viewBox', [-r, -r, S, S]);
+    const arcs = d3.pie().sort(null).value((x) => x.v)(items);
+    const arc = d3.arc().innerRadius(r * 0.55).outerRadius(r - 2);
+    svg.selectAll('path').data(arcs).join('path').attr('d', arc).attr('fill', (a, i) => COLORS[i % COLORS.length]).attr('stroke', '#000').attr('stroke-width', 1.5);
+    svg.append('text').attr('text-anchor', 'middle').attr('dominant-baseline', 'central').attr('fill', '#fff').style('font-size', '15px').text(money(tot, R));
+    const leg = el('div', 'pf-leg');
+    items.forEach((x, i) => {
+      const row = el('div', 'pf-leg-r'); const sw = document.createElement('i'); sw.style.background = COLORS[i % COLORS.length];
+      const b = el('b'); b.append(el('span', '', (x.v / tot * 100).toFixed(1).replace('.', ',') + ' %'), el('span', 'pf-leg-m', money(x.v, R))); row.append(sw, el('span', '', x.label), b);
+      leg.append(row);
+    });
+    wrap.append(svg.node(), leg); box.replaceChildren(wrap);
+  };
+  const group = (ls, key) => { const m = new Map(); for (const l of ls) { const k = l[key] || 'Autre'; m.set(k, (m.get(k) || 0) + l.valeur_chf); } return [...m].map(([label, v]) => ({label, v})); };
+  dash.draw('pie-pays', (box) => { const ls = lines(); if (!ls) return waiting(box, 220); pie(box, group(ls, 'pays'), rateOf(ls)); });
+  dash.draw('pie-secteur', (box) => { const ls = lines(); if (!ls) return waiting(box, 220); pie(box, group(ls, 'secteur'), rateOf(ls)); });
+  dash.draw('pie-action', (box) => { const ls = lines(); if (!ls) return waiting(box, 220); pie(box, ls.map((l) => ({label: l.nom, v: l.valeur_chf})), rateOf(ls)); });
+
+  // ---------- toi contre le monde ----------
+  const vsSeries = () => {
+    const h = dash.data('historique'), a = dash.data('achats_gs'), hi = dash.data('histo_gs'), ch = dash.data('change');
+    if ([h, a, hi, ch].some((x) => x.status !== 'ok' || !x.data)) return null;
+    const px = new Map(hi.data.filter((r) => r.ticker === 'NYSEARCA:URTH').map((r) => [r.date, r.close]));
+    if (!px.size) return [];
+    const pxd = [...px.keys()].sort();
+    const priceOn = (d) => { let b = null; for (const k of pxd) { if (k <= d) b = px.get(k); else break; } return b != null ? b : px.get(pxd[0]); };
+    const buys = a.data.slice().sort((x, y) => (x.date < y.date ? -1 : 1));
+    const units = buys.map((b) => ({date: b.date, u: (b.cout_chf || 0) / (priceOn(b.date) * window.pfFx(ch.data, b.date).USD)}));
+    return h.data.filter((r) => r.symbol === 'TOTAL').map((r) => {
+      const u = units.filter((x) => x.date <= r.date).reduce((s, x) => s + x.u, 0);
+      return {d: r.date, toi: r.valeur_chf, monde: u * priceOn(r.date) * window.pfFx(ch.data, r.date).USD, inv: r.investi_chf};
+    });
+  };
+  dash.draw('vs-tuiles', (box) => {
+    const S = vsSeries(); if (S == null) return waiting(box, 90);
+    if (!S.length) { box.replaceChildren(el('p', 'pf-fail', 'Les cours de la bourse mondiale ne sont pas encore la. Reviens dans une heure.')); return; }
+    const last = S[S.length - 1]; const ls = lines() || []; const R = rateOf(ls);
+    const pt = (v) => (last.inv ? (v / last.inv - 1) * 100 : 0);
+    const f = (x) => (x >= 0 ? '+' : '') + x.toFixed(2).replace('.', ',') + ' %';
+    const diff = last.toi - last.monde;
+    const t = (n, v, cls, s) => { const c = el('div', 'pf-dtile'); c.append(el('div', 'pf-dtile-n', n), el('div', 'pf-dtile-v ' + cls, v)); if (s) c.append(el('div', 'pf-dtile-s', s)); return c; };
+    const g = el('div', 'pf-dtiles');
+    g.append(t('Toi', f(pt(last.toi)), pt(last.toi) >= 0 ? 'pf-up' : 'pf-down', money(last.toi, R)),
+      t('Bourse mondiale', f(pt(last.monde)), pt(last.monde) >= 0 ? 'pf-up' : 'pf-down', money(last.monde, R)),
+      t(diff >= 0 ? 'Tu fais mieux de' : 'Tu fais moins bien de', money(Math.abs(diff), R), diff >= 0 ? 'pf-up' : 'pf-down', 'depuis ton premier achat'));
+    box.replaceChildren(g);
+  });
+  dash.draw('vs-chart', (box) => {
+    const S = vsSeries(); if (S == null) return waiting(box, 260);
+    if (S.length < 2) { box.replaceChildren(); return; }
+    const ls = lines() || []; const R = rateOf(ls);
+    const W = Math.max(280, box.clientWidth || 600), H = 280, m = {t: 12, r: 12, b: 26, l: 46};
+    const P = S.map((s) => ({d: new Date(s.d + 'T12:00:00'), toi: fromChf(s.toi, R), monde: fromChf(s.monde, R), inv: fromChf(s.inv, R)}));
+    const x = d3.scaleTime().domain(d3.extent(P, (p) => p.d)).range([m.l, W - m.r]);
+    const y = d3.scaleLinear().domain([0, d3.max(P, (p) => Math.max(p.toi, p.monde, p.inv)) * 1.08]).nice().range([H - m.b, m.t]);
+    const svg = d3.create('svg').attr('viewBox', [0, 0, W, H]).style('width', '100%').style('height', 'auto');
+    svg.append('g').attr('transform', 'translate(0,' + (H - m.b) + ')').call(d3.axisBottom(x).ticks(4).tickFormat((d) => d.getDate() + ' ' + MOIS[d.getMonth()].slice(0, 4))).call((g) => g.selectAll('text').style('fill', '#bbb'));
+    svg.append('g').attr('transform', 'translate(' + m.l + ',0)').call(d3.axisLeft(y).ticks(5)).call((g) => g.selectAll('text').style('fill', '#bbb'));
+    const line = (k) => d3.line().x((p) => x(p.d)).y((p) => y(p[k]));
+    svg.append('path').datum(P).attr('fill', 'none').attr('stroke', '#888').attr('stroke-dasharray', '4 4').attr('stroke-width', 1.5).attr('d', line('inv'));
+    svg.append('path').datum(P).attr('fill', 'none').attr('stroke', '#6fb7ff').attr('stroke-width', 2).attr('d', line('monde'));
+    svg.append('path').datum(P).attr('fill', 'none').attr('stroke', '#fff').attr('stroke-width', 2.5).attr('d', line('toi'));
+    const leg = el('div', 'pf-leg'); leg.style.marginTop = '8px';
+    [['#fff', 'Toi'], ['#6fb7ff', 'Bourse mondiale'], ['#888', 'Argent investi']].forEach(([c, n]) => { const r = el('div', 'pf-leg-r'); const i = document.createElement('i'); i.style.background = c; r.append(i, el('span', '', n), el('b', '', '')); leg.append(r); });
+    box.replaceChildren(svg.node(), leg);
+  });
+  window.addEventListener('resize', () => dash.draw('vs-chart'));
+})();
+</script>
 <script>
 document.querySelectorAll('#pf-refresh').forEach((b) => b.addEventListener('click', () => window.pfLoad()));
 window.pfLoad();

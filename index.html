@@ -1251,8 +1251,8 @@ window.pfGapChart = function (el, series, opts) {
   const buys = series.filter((s) => s.achat);
   svg.selectAll('line.buy').data(buys).join('line').attr('class', 'buy').attr('x1', (s) => x(s.d)).attr('x2', (s) => x(s.d)).attr('y1', (s) => y(s.v)).attr('y2', H - m.b)
     .style('stroke', 'var(--color-fg-muted)').style('stroke-width', 1).style('stroke-dasharray', '2 3').style('opacity', 0.6);
-  svg.selectAll('circle.buy').data(buys).join('circle').attr('class', 'buy').attr('cx', (s) => x(s.d)).attr('cy', (s) => y(s.v)).attr('r', 6)
-    .style('fill', 'var(--color-panel)').style('stroke', 'var(--pf-accent)').style('stroke-width', 3);
+  svg.selectAll('text.buy').data(buys).join('text').attr('class', 'buy').attr('x', (s) => x(s.d)).attr('y', (s) => y(s.v))
+    .attr('text-anchor', 'middle').attr('dominant-baseline', 'central').style('font-size', '15px').style('pointer-events', 'none').text('\u{1F911}');
   const ls = series[series.length - 1];
   svg.append('circle').attr('cx', x(ls.d)).attr('cy', y(ls.v)).attr('r', 4.5).style('fill', 'var(--pf-accent)').style('stroke', 'var(--color-panel)').style('stroke-width', 2);
 

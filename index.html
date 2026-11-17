@@ -504,6 +504,17 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 /* --- Moins de texte (Claude) --- */
 .pf [data-draw="t-date"], .pf #tuile-investi .pf-sub, .pf [data-draw="detail-sous"], .pf [data-draw="proj-phrase"],
 .pf .pf-market-copy .pf-lede, .pf .pf-legend { display: none !important; }
+
+/* tableau des actions compact sur téléphone */
+.pf .pf-table th, .pf .pf-table td { padding-inline: 6px; }
+@media (max-width: 600px) {
+  .pf .pf-table th:nth-child(4), .pf .pf-table td:nth-child(4), .pf .pf-table th:nth-child(5), .pf .pf-table td:nth-child(5) { display: none; }
+  .pf .pf-table { width: 100%; font-size: 0.78rem; }
+  .pf .pf-table td:first-child { max-width: 34vw; overflow: hidden; text-overflow: ellipsis; }
+  .pf .pf-tablewrap { overflow-x: hidden; }
+  .pf .pf-table th { white-space: nowrap; }
+  .pf .pf-logo { width: 34px; height: 34px; } .pf .pf-logo img { width: 26px; height: 26px; }
+}
 </style>
 
 <div class="pf">
@@ -527,7 +538,7 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
       <div class="pf-screen-content" tabindex="0" aria-label="Mon portefeuille et Prévision">
       <div class="pf-screen-controls">
     <div class="pf-cur" role="group" aria-label="Devise d'affichage">
-      <button type="button" class="pf-cur-btn" data-cur="CHF" aria-pressed="true">Fr</button>
+      <button type="button" class="pf-cur-btn" data-cur="CHF" aria-pressed="true">CHF</button>
       <button type="button" class="pf-cur-btn" data-cur="EUR" aria-pressed="false">€</button>
       <button type="button" class="pf-cur-btn" data-cur="USD" aria-pressed="false">$</button>
     </div>
@@ -602,7 +613,7 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
             <option value="60">5 ans</option>
           </select>
         </label>
-        <label class="pf-field" for="proj-mensuel">Ajout chaque mois (Fr)
+        <label class="pf-field" for="proj-mensuel">Ajout chaque mois (CHF)
           <input class="pf-input" id="proj-mensuel" type="number" min="0" step="10" value="200" inputmode="decimal">
         </label>
       </div>
@@ -852,7 +863,7 @@ dash.calc('historique', {
         if (use == null) { tv += costChf; continue; }
         const inDev = cot === dev ? use : use * (f[cot] || 1) / (f[dev] || 1);
         tv += q * inDev * (f[dev] || 1);
-        if (p != null) { const b = held.filter((a) => a.date === d); out.push({symbol: t, date: d, prix: r2(inDev), pct: r2((inDev / (cost / q) - 1) * 100), valeur_chf: r2(q * inDev * (f[dev] || 1)), investi_chf: r2(costChf), achat: b.length ? 1 : 0, achats: b.length ? 'achat de ' + new Intl.NumberFormat('fr-CH', {maximumFractionDigits: 2}).format(b.reduce((s, a) => s + (a.cout_chf || 0), 0)) + ' Fr' : ''}); }
+        if (p != null) { const b = held.filter((a) => a.date === d); out.push({symbol: t, date: d, prix: r2(inDev), pct: r2((inDev / (cost / q) - 1) * 100), valeur_chf: r2(q * inDev * (f[dev] || 1)), investi_chf: r2(costChf), achat: b.length ? 1 : 0, achats: b.length ? 'achat de ' + new Intl.NumberFormat('fr-CH', {maximumFractionDigits: 2}).format(b.reduce((s, a) => s + (a.cout_chf || 0), 0)) + ' CHF' : ''}); }
       }
       const bought = achats.filter((a) => a.date === d);
       out.push({symbol: 'TOTAL', date: d, prix: null, pct: r2((tv / ti - 1) * 100), valeur_chf: r2(tv), investi_chf: r2(ti), usdchf: f.usd, eurchf: f.eur, achat: bought.length ? 1 : 0, achats: [...new Set(bought.map((a) => (info.get(a.ticker) || {}).nom || a.nom || a.ticker))].join(', ')});
@@ -943,7 +954,9 @@ dash.calc('periodes', {
           let st = null, lim;
           if (n <= 2) {
             // 24 h = depuis la dernière clôture, 48 h = depuis l'avant-dernière (jours de bourse)
-            const past = rows.filter((r) => r.date < today);
+            let past = rows.filter((r) => r.date < today);
+            // bourse fermée depuis la dernière clôture : on compare avec la séance d'avant
+            if (past.length > 1 && s.v && Math.abs(s.v - past[past.length - 1].valeur_chf) <= Math.max(0.01, 0.0005 * s.v)) past = past.slice(0, -1);
             st = past.length >= n ? past[past.length - n] : null;
             lim = st ? st.date : ago(n);
           } else {
@@ -1017,7 +1030,7 @@ window.pfSelect = function (sym) {
 <script>
 // ---------- formatting helpers ----------
 window.pfFmt = {
-  sym: {CHF: 'Fr', EUR: '€', USD: '$'},
+  sym: {CHF: 'CHF', EUR: '€', USD: '$'},
   key: {CHF: 'chf', EUR: 'eur', USD: 'usd'},
   money(v, cur, signed) {
     const s = new Intl.NumberFormat('fr-CH', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(Math.abs(v));
@@ -1132,8 +1145,8 @@ dash.draw('t-date', (el) => {
   const r = t.data[0];
   const cur = window.pfState.cur;
   let fxTxt = '';
-  if (cur === 'EUR') fxTxt = ' · 1 € = ' + r.eurchf.toFixed(4).replace('.', ',') + ' Fr';
-  else if (cur === 'USD') fxTxt = ' · 1 $ = ' + r.usdchf.toFixed(4).replace('.', ',') + ' Fr';
+  if (cur === 'EUR') fxTxt = ' · 1 € = ' + r.eurchf.toFixed(4).replace('.', ',') + ' CHF';
+  else if (cur === 'USD') fxTxt = ' · 1 $ = ' + r.usdchf.toFixed(4).replace('.', ',') + ' CHF';
   el.replaceChildren(document.createTextNode('Cours Google Finance, mis à jour à l\'ouverture' + fxTxt));
 });
 
@@ -1320,9 +1333,9 @@ dash.draw('table', (el) => {
   const tbl = document.createElement('table'); tbl.className = 'pf-table';
   tbl.setAttribute('data-source', 'lignes'); tbl.setAttribute('data-row-key', 'symbol');
   const thead = document.createElement('thead'); const hr = document.createElement('tr');
-  [['Action', 'nom'], ['Valeur', 'valeur_' + k], ['%', 'pct'], ['Gain total', 'gain_' + k]].forEach(([t, f]) => { const th = document.createElement('th'); th.textContent = t; th.setAttribute('data-field', f); hr.append(th); });
+  [['', 'nom'], [F.sym[cur], 'valeur_' + k], ['Total', 'pct'], ['Gain', 'gain_' + k]].forEach(([t, f]) => { const th = document.createElement('th'); th.textContent = t; th.setAttribute('data-field', f); hr.append(th); });
   const per = window.pfState.per, pl = per === 'tout' ? 'depuis le début' : 'depuis ' + window.pfPerTxt[per];
-  [['Gain ' + pl, 'gain_' + per + '_' + k], ['% ' + pl, 'pct_' + per]].forEach(([t, f]) => { const th = document.createElement('th'); th.textContent = t; th.setAttribute('data-field', f); th.setAttribute('data-source', 'periodes'); hr.append(th); });
+  [['Gain ' + window.pfPerTxt[per], 'gain_' + per + '_' + k], [per === 'tout' ? 'Debut' : window.pfPerTxt[per], 'pct_' + per]].forEach(([t, f]) => { const th = document.createElement('th'); th.textContent = t; th.setAttribute('data-field', f); th.setAttribute('data-source', 'periodes'); hr.append(th); });
   const perData = dash.data('periodes'); const perBy = new Map((perData.status === 'ok' && perData.data ? perData.data : []).map((x) => [x.symbol, x]));
   thead.append(hr);
   const tb = document.createElement('tbody');
@@ -1337,12 +1350,12 @@ dash.draw('table', (el) => {
       im.onerror = () => { c1.textContent = window.pfPlain ? window.pfPlain(r.nom) : r.nom; };
       box.append(im); const cell = document.createElement('span'); cell.className = 'pf-logo-cell'; cell.append(box); c1.append(cell);
     } else c1.textContent = r.nom;
-    const c2 = document.createElement('td'); c2.textContent = r['valeur_' + k] == null ? '—' : F.money(r['valeur_' + k], cur);
+    const c2 = document.createElement('td'); c2.textContent = r['valeur_' + k] == null ? '—' : F.money(r['valeur_' + k], cur).replace(' ' + F.sym[cur], '');
     const c3 = document.createElement('td'); c3.textContent = r.pct == null ? '—' : F.pct(r.pct); if (r.pct != null) c3.className = r.pct >= 0 ? 'pf-up' : 'pf-down';
-    const c4 = document.createElement('td'); c4.textContent = r['gain_' + k] == null ? '—' : F.money(r['gain_' + k], cur, true); if (r.gain_chf != null) c4.className = r.gain_chf >= 0 ? 'pf-up' : 'pf-down';
+    const c4 = document.createElement('td'); c4.textContent = r['gain_' + k] == null ? '—' : F.money(r['gain_' + k], cur, true).replace(' ' + F.sym[cur], ''); if (r.gain_chf != null) c4.className = r.gain_chf >= 0 ? 'pf-up' : 'pf-down';
     const pp = perBy.get(r.symbol);
     const gv = pp ? pp['gain_' + per + '_' + k] : null, pv = pp ? pp['pct_' + per] : null;
-    const c5 = document.createElement('td'); c5.textContent = gv == null ? '—' : F.money(gv, cur, true); if (gv != null) c5.className = gv >= 0 ? 'pf-up' : 'pf-down';
+    const c5 = document.createElement('td'); c5.textContent = gv == null ? '—' : F.money(gv, cur, true).replace(' ' + F.sym[cur], ''); if (gv != null) c5.className = gv >= 0 ? 'pf-up' : 'pf-down';
     const c6 = document.createElement('td'); c6.textContent = pv == null ? '—' : F.pct(pv); if (pv != null) c6.className = pv >= 0 ? 'pf-up' : 'pf-down';
     tr.append(c1, c2, c3, c4, c5, c6);
     const go = () => window.pfSelect(window.pfState.sel === r.symbol ? null : r.symbol);
@@ -1397,7 +1410,7 @@ dash.draw('proj-phrase', (el) => {
   const n = window.pfProjName();
   const b = (txt, field) => { const s = F.span(txt, 'projection_fin', field, w); const x = document.createElement('b'); x.append(s); return x; };
   el.replaceChildren(
-    document.createTextNode((C > 0 ? 'Si tu ajoutes ' + new Intl.NumberFormat('fr-CH').format(C) + ' Fr par mois, ' : 'Sans rien ajouter, ') + 'dans ' + H + ' ' + (n ? 'ta ligne ' + n : 'ton portefeuille') + ' vaudrait environ '),
+    document.createTextNode((C > 0 ? 'Si tu ajoutes ' + new Intl.NumberFormat('fr-CH').format(C) + ' CHF par mois, ' : 'Sans rien ajouter, ') + 'dans ' + H + ' ' + (n ? 'ta ligne ' + n : 'ton portefeuille') + ' vaudrait environ '),
     b(F.money(r['normal_' + k], cur), 'normal_' + k),
     document.createTextNode(' dans le scénario normal, entre '), b(F.money(r['pessimiste_' + k], cur), 'pessimiste_' + k),
     document.createTextNode(' et '), b(F.money(r['optimiste_' + k], cur), 'optimiste_' + k),

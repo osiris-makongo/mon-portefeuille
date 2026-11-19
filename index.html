@@ -630,7 +630,7 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 .pf .an-small { font-size: 13px; color: #999; margin-top: 8px; }
 .pf .an-acc { color: #6f8fff; font-weight: 600; margin-top: 18px; }
 .pf .an-c4l { min-width: 0; }
-.pf .an-wide.an-click { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: end; cursor: pointer; }
+.pf .an-c4 { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: end; cursor: pointer; }
 .pf .an-minibars { display: flex; gap: 12px; align-items: flex-end; }
 .pf .an-mb { display: grid; justify-items: center; gap: 6px; }
 .pf .an-mb-t { width: 12px; height: 110px; background: #4a4a50; border-radius: 6px; display: flex; align-items: flex-end; overflow: hidden; }
@@ -646,6 +646,39 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 .pf .an-row-r { text-align: right; color: #fff; font-size: 15px; white-space: nowrap; }
 .pf .an-click { cursor: pointer; }
 @media (max-width: 620px) { .pf .an-big { font-size: 26px; } .pf .an-mid { font-size: 20px; } .pf .an-card { padding: 14px; border-radius: 18px; } .pf .an-mb-t { height: 80px; } .pf .an-minibars { gap: 8px; } }
+
+/* --- une seule page : Marche puis Outils d'analyse ; les autres ecrans s'ouvrent par-dessus --- */
+.pf .pf-screen-nav { display: none !important; }
+.pf #ecran-marche { display: grid !important; }
+.pf .pf-screen:not(#ecran-marche).pf-on { position: fixed; inset: 0; z-index: 5; background: #000; }
+.pf .pf-screen-content { padding-bottom: calc(30px + env(safe-area-inset-bottom)) !important; }
+.pf .pf-fiche { inset: 0 !important; z-index: 8 !important; }
+.pf .an-back { position: sticky; top: 0; z-index: 2; display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px; padding: 10px 16px; border-radius: 999px; border: 1px solid #ffffff22; background: #17171bee; color: #fff; font: 600 15px var(--pf-text); cursor: pointer; }
+.pf .an-home { margin: 36px auto 0; max-width: 760px; }
+.pf #ecran-repartition .pf-section { max-width: 760px; margin-inline: auto; }
+.pf .an-title { font: 700 clamp(30px, 8vw, 44px)/1.1 var(--pf-text); color: #fff; margin: 0 0 16px; text-transform: none; letter-spacing: 0; }
+.pf .an-head { display: grid; gap: 4px; margin-bottom: 8px; }
+.pf .an-head .an-pers { margin: 4px 0 6px; }
+.pf .an-grid > .an-click { transition: transform .12s, border-color .12s; }
+.pf .an-grid > .an-click:hover { border-color: #ffffff30; }
+.pf .an-grid > .an-click:active { transform: scale(.98); }
+.pf .an-bw { display: flex; align-items: center; gap: 10px; font-size: 18px; margin: 4px 0 6px; font-family: var(--pf-display); }
+.pf .an-bw .pf-logo img { width: 26px; height: 26px; }
+.pf, .pf * { box-sizing: border-box; }
+.pf .pf-screen-content { max-width: 100vw; }
+.pf img, .pf svg { max-width: 100%; }
+@media (max-width: 620px) {
+  .pf .an-grid { gap: 10px; }
+  .pf .an-card { padding: 14px 12px; }
+  .pf .an-mid { font-size: 19px; }
+  .pf .an-bw { font-size: 15px; }
+  .pf .an-per { padding: 7px 4px; font-size: 13px; }
+  .pf .pf-tablewrap { overflow-x: visible !important; }
+  .pf .pf-table { width: 100%; table-layout: auto; }
+  .pf .pf-table th, .pf .pf-table td { padding-inline: 4px !important; white-space: normal !important; overflow-wrap: anywhere; }
+  .pf .pf-pie { grid-template-columns: 1fr !important; }
+  .pf .pf-st-r { grid-template-columns: 1fr auto 46px; }
+}
 </style>
 
 <div id="pf-intro"><span>John Rockefeller</span></div>
@@ -665,6 +698,10 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
       </div>
     </div>
   </header>
+  <section class="pf-section an-home">
+    <h2 class="an-title">Outils d'analyse</h2>
+    <div data-draw="an-outils"></div>
+  </section>
       </div>
     </section>
     <section class="pf-screen" id="ecran-portefeuille" aria-label="Mon portefeuille et Prévision">
@@ -837,19 +874,16 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
     <section class="pf-screen" id="ecran-repartition" aria-label="Repartition">
       <div class="pf-screen-content" tabindex="0" aria-label="Repartition">
   <section class="pf-section">
-    <h2 class="pf-section-title">Outils d'analyse</h2>
-    <div data-draw="an-outils"></div>
-    <h3 class="pf-h3" id="an-rep-h">Repartition des actifs</h3>
+    <h2 class="pf-section-title" id="an-rep-h">Repartition des actifs</h2>
     <div data-draw="an-rep"></div>
-    <h2 class="pf-section-title" style="margin-top: 34px">En camemberts</h2>
+    <h3 class="pf-h3">Positions</h3>
+    <div data-draw="pie-action"></div>
+    <h3 class="pf-h3">Statistiques (actions uniquement)</h3>
+    <div data-draw="stats-actions"></div>
     <h3 class="pf-h3">Par pays</h3>
     <div data-draw="pie-pays"></div>
     <h3 class="pf-h3">Par secteur</h3>
     <div data-draw="pie-secteur"></div>
-    <h3 class="pf-h3">Par action</h3>
-    <div data-draw="pie-action"></div>
-    <h3 class="pf-h3">Statistiques (actions uniquement)</h3>
-    <div data-draw="stats-actions"></div>
   </section>
       </div>
     </section>
@@ -1985,6 +2019,7 @@ dash.draw('proj-chart', (el) => {
     const gainP = pr['gain_' + per + '_chf'], pctP = pr['pct_' + per];
     const gainT = tt.valeur_chf - tt.investi_chf;
     const wrap = el('div', 'an-grid');
+    const open = (c, i, tab) => { c.classList.add('an-click'); c.addEventListener('click', () => { window.pfShowScreen(i); if (tab && window.pfShowTab) window.pfShowTab(tab); }); };
     // periodes
     const pb = el('div', 'an-pers');
     AN_PER.forEach(([k, t]) => { const b = el('button', 'an-per' + (k === per ? ' on' : ''), t); b.type = 'button'; b.addEventListener('click', () => { A.per = k; anRedraw(); }); pb.append(b); });
@@ -2012,13 +2047,13 @@ dash.draw('proj-chart', (el) => {
     const ap = el('label', 'an-app'); const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = A.apports;
     cb.addEventListener('change', () => { A.apports = cb.checked; dash.draw('an-outils'); });
     ap.append(cb, el('span', '', 'Afficher les apports'), el('b', '', money(tt.investi_chf, R)));
-    c1.append(top, svg.node(), pb, ap);
+    c1.append(top, svg.node());
     // 2. performance
     const c2 = el('div', 'an-card');
     c2.append(el('div', 'an-lab', 'Performance'), el('div', 'an-mid ' + (pctP >= 0 ? 'pf-up' : 'pf-down'), pctP != null ? pct2(pctP) : '-'));
     const r0 = rows[0];
     const sp = rows.map((r) => (r.v - r.i) - (r0.v - r0.i));
-    const s2 = d3.create('svg').attr('viewBox', [0, 0, 200, 70]).attr('class', 'an-spark');
+    const s2 = d3.create('svg').attr('viewBox', [0, 0, 200, 70]).attr('preserveAspectRatio', 'none').attr('class', 'an-spark');
     const sx = d3.scaleLinear().domain([0, sp.length - 1]).range([0, 200]), sy = d3.scaleLinear().domain(d3.extent(sp.concat([0]))).range([66, 4]);
     const sc = (pctP || 0) >= 0 ? '#5fe3a1' : '#ff7070';
     s2.append('path').datum(sp).attr('fill', sc).attr('fill-opacity', 0.15).attr('d', d3.area().x((v, k) => sx(k)).y0(70).y1((v) => sy(v)));
@@ -2030,7 +2065,7 @@ dash.draw('proj-chart', (el) => {
     const pl = el('div', 'an-pl'); pl.append(el('div', '', signMoney(0, R) + ' realises'), el('div', '', signMoney(gainP || 0, R) + ' non realises'));
     c3.append(pl, el('div', 'an-small', 'Depuis le debut : ' + signMoney(gainT, R)));
     // 4. actif le plus detenu
-    const c4 = el('div', 'an-card an-wide an-click');
+    const c4 = el('div', 'an-card an-wide an-c4');
     const tot = ls.reduce((s, l) => s + l.valeur_chf, 0);
     const srt = ls.slice().sort((a, b) => b.valeur_chf - a.valeur_chf);
     const left = el('div', 'an-c4l'); left.append(el('div', 'an-lab', 'Repartition des actifs'), el('div', 'an-small an-acc', 'Actif le plus detenu'),
@@ -2040,9 +2075,19 @@ dash.draw('proj-chart', (el) => {
     four.concat([{l: null, p: rest}]).forEach((z) => { const c = el('div', 'an-mb'); const t = el('div', 'an-mb-t'); const f = el('i'); f.style.height = Math.max(4, z.p * 100) + '%'; if (!z.l) f.style.background = '#4f7cff'; t.append(f);
       c.append(t, z.l ? logo(z.l) : el('span', 'an-dots', '+')); bars.append(c); });
     c4.append(left, bars);
-    c4.addEventListener('click', () => { const t = document.getElementById('an-rep-h'); if (t) t.scrollIntoView({behavior: 'smooth'}); });
-    wrap.append(c1, c2, c3, c4);
-    box.replaceChildren(wrap);
+    // 5. dividendes, 6. mes actions
+    const c5 = el('div', 'an-card');
+    const Dv = divs(ls, R); const net = Dv.reduce((s, d) => s + d.net, 0);
+    c5.append(el('div', 'an-lab', 'Dividendes'), el('div', 'an-mid pf-up', money(net, R)), el('div', 'an-small', 'par an apres impots, ' + money(net / 12, R) + ' par mois'));
+    const c6 = el('div', 'an-card');
+    const byG = ls.filter((l) => l.gain_pct != null).sort((a, b) => b.gain_pct - a.gain_pct);
+    const best = byG[0], worst = byG[byG.length - 1];
+    const ln = (l) => { const d = el('div', 'an-bw'); d.append(logo(l), el('span', l.gain_pct >= 0 ? 'pf-up' : 'pf-down', pct2(l.gain_pct))); return d; };
+    c6.append(el('div', 'an-lab', 'Mes actions'), el('div', 'an-small', 'Meilleure'), ln(best), el('div', 'an-small', 'Pire'), ln(worst));
+    open(c1, 1, 'vue'); open(c2, 1, 'contre'); open(c3, 2); open(c4, 4); open(c5, 3); open(c6, 2);
+    const head = el('div', 'an-head'); head.append(el('span', 'an-lab', 'Tous les comptes'), pb);
+    wrap.append(c1, c2, c3, c4, c5, c6);
+    box.replaceChildren(head, wrap);
   });
   const ABR = {'Etats-Unis': 'US', 'Suisse': 'CH', 'Pays-Bas': 'NL', 'Autriche': 'AT', 'Japon': 'JP', 'Monde': 'MO', 'France': 'FR', 'Allemagne': 'DE'};
   dash.draw('an-rep', (box) => {
@@ -2437,9 +2482,11 @@ window.pfLoad();
     if (window.pfRedraw) window.pfRedraw();
   }
   window.pfShowScreen = show;
+  screens.forEach((s, i) => { if (!i) return; const c = s.querySelector('.pf-screen-content'); const b = document.createElement('button'); b.type = 'button'; b.className = 'an-back'; b.textContent = '\u2190 Retour';
+    b.addEventListener('click', () => { if (window.pfScreenBack) window.pfScreenBack(); else show(0); }); c.prepend(b); });
   window.pfScreenBack = () => { while (pile.length) { const p = pile.pop(); if (p !== current) { show(p, true); return true; } } if (current !== 0) { show(0, true); return true; } return false; };
   buttons.forEach((button, i) => button.addEventListener('click', () => show(i)));
-  let start = 0; try { start = Number(sessionStorage.getItem('pf-screen')) || 0; } catch (e) {}
+  const start = 0;
   show(Math.min(screens.length - 1, start));
 })();
 </script>

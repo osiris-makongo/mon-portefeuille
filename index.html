@@ -655,7 +655,7 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 .pf .pf-fiche { inset: 0 !important; z-index: 8 !important; }
 .pf .an-back { position: sticky; top: 0; z-index: 2; display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px; padding: 10px 16px; border-radius: 999px; border: 1px solid #ffffff22; background: #17171bee; color: #fff; font: 600 15px var(--pf-text); cursor: pointer; }
 .pf .an-home { margin: 36px auto 0; max-width: 760px; }
-.pf #ecran-repartition .pf-section { max-width: 760px; margin-inline: auto; }
+.pf #ecran-repartition .pf-section, .pf #ecran-actions .pf-section { max-width: 760px; margin-inline: auto; }
 .pf .an-title { font: 700 clamp(30px, 8vw, 44px)/1.1 var(--pf-text); color: #fff; margin: 0 0 16px; text-transform: none; letter-spacing: 0; }
 .pf .an-head { display: grid; gap: 4px; margin-bottom: 8px; }
 .pf .an-head .an-pers { margin: 4px 0 6px; }
@@ -826,6 +826,23 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
       <div class="pf-screen-content" tabindex="0" aria-label="Mes actions">
   <section class="pf-section" id="actions" aria-labelledby="titre-actions">
     <h2 class="pf-section-title" id="titre-actions">Mes actions</h2>
+    <h3 class="pf-h3">Positions</h3>
+    <div data-draw="pie-action"></div>
+    <h3 class="pf-h3">Statistiques (actions uniquement)</h3>
+    <div data-draw="stats-actions"></div>
+    <h3 class="pf-h3">Detail par action</h3>
+  <div class="pf-per" style="margin-bottom: 12px">
+    <div class="pf-per-btns" role="group" aria-label="Période">
+      <button type="button" class="pf-per-btn" data-per="1j" aria-pressed="true">1J</button>
+      <button type="button" class="pf-per-btn" data-per="5j" aria-pressed="false">5J</button>
+      <button type="button" class="pf-per-btn" data-per="1m" aria-pressed="false">1M</button>
+      <button type="button" class="pf-per-btn" data-per="6m" aria-pressed="false">6M</button>
+      <button type="button" class="pf-per-btn" data-per="ytd" aria-pressed="false">Debut annee</button>
+      <button type="button" class="pf-per-btn" data-per="1a" aria-pressed="false">1AN</button>
+      <button type="button" class="pf-per-btn" data-per="5a" aria-pressed="false">5ANS</button>
+      <button type="button" class="pf-per-btn" data-per="tout" aria-pressed="false">MAX</button>
+    </div>
+  </div>
     <div class="pf-tablewrap" data-draw="table"></div>
     <h3 class="pf-h3">A venir</h3>
     <div data-draw="avenir"></div>
@@ -876,10 +893,6 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
   <section class="pf-section">
     <h2 class="pf-section-title" id="an-rep-h">Repartition des actifs</h2>
     <div data-draw="an-rep"></div>
-    <h3 class="pf-h3">Positions</h3>
-    <div data-draw="pie-action"></div>
-    <h3 class="pf-h3">Statistiques (actions uniquement)</h3>
-    <div data-draw="stats-actions"></div>
     <h3 class="pf-h3">Par pays</h3>
     <div data-draw="pie-pays"></div>
     <h3 class="pf-h3">Par secteur</h3>
@@ -1259,7 +1272,7 @@ window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-va
 window.pfPerTxt = {'1j': '24 h', '5j': '5 jours', '1m': '1 mois', '6m': '6 mois', 'ytd': 'le 1er janvier', '1a': '1 an', '5a': '5 ans', 'tout': 'le debut'};
 document.querySelectorAll('.pf-per-btn').forEach((b) => b.addEventListener('click', () => {
   window.pfState.per = b.getAttribute('data-per');
-  document.querySelectorAll('.pf-per-btn').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+  document.querySelectorAll('.pf-per-btn').forEach((x) => x.setAttribute('aria-pressed', x.getAttribute('data-per') === window.pfState.per ? 'true' : 'false'));
   window.pfRedraw();
 }));
 window.pfShowTab = function (id) {

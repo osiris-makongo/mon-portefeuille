@@ -689,6 +689,14 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 .pf .an-plbar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
 .pf .an-plbar i.up { left: 50%; background: #5fe3a1; }
 .pf .an-plbar i.down { right: 50%; background: #ff7070; }
+
+.pf .pf-av-h { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 18px 0 6px; padding-bottom: 6px; border-bottom: 1px solid #ffffff30; color: #fff; font: 700 16px var(--pf-text); }
+.pf .pf-av-h span:last-child { color: #5fe3a1; font-weight: 600; font-size: 14px; }
+.pf .pf-avenir td.pf-av-m { color: #5fe3a1; text-align: right; white-space: nowrap; }
+.pf .pf-avenir td:nth-child(5) { display: table-cell !important; text-align: right; }
+.pf .pf-avenir td:nth-child(4) { white-space: nowrap; }
+.pf .pf-avenir td:nth-child(n+3) { white-space: nowrap !important; overflow-wrap: normal !important; }
+@media (max-width: 620px) { .pf .pf-avenir td { font-size: 12px !important; padding-inline: 3px !important; } .pf .pf-avenir td:nth-child(2) { font-size: 12px !important; } }
 </style>
 
 <div id="pf-intro"><span>John Rockefeller</span></div>
@@ -1042,7 +1050,7 @@ dash.loader('marche_gs', {
       const r = v[i] || [];
       if (!r[1]) continue;
       const pc = (x) => (N(x) == null ? null : Math.round(N(x) * 10000) / 100);
-      rows.push({indice: r[0], ticker: r[1], niveau: N(r[2]) || null, jour: pc(r[3]), mois: pc(r[5]), plus_haut: N(r[6]), ecart: pc(r[7]), site: (r[8] || '').trim(), devise: (r[9] || '').trim(), avenir: (r[10] || '').trim() === 'avenir' ? 1 : 0});
+      rows.push({indice: r[0], ticker: r[1], niveau: N(r[2]) || null, jour: pc(r[3]), mois: pc(r[5]), plus_haut: N(r[6]), ecart: pc(r[7]), site: (r[8] || '').trim(), devise: (r[9] || '').trim(), avenir: (r[10] || '').trim() === 'avenir' ? 1 : 0, mois: (r[11] || '').trim(), montant: N(r[12])});
     }
     return {data: rows, columns: ['indice', 'ticker', 'niveau', 'jour', 'mois', 'plus_haut', 'ecart']};
   }
@@ -2531,8 +2539,20 @@ dash.draw('fiche-tuiles', (box) => {
     const mk = dash.data('marche_gs'); const ws = (mk.data || []).filter((x) => x.avenir);
     if (!ws.length) { box.replaceChildren(); return; }
     const F = window.pfFmt;
+    const ORD = ['Novembre', 'Decembre', 'Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre'];
+    const grp = new Map();
+    for (const w of ws) { const k = w.mois || 'Plus tard'; if (!grp.has(k)) grp.set(k, []); grp.get(k).push(w); }
+    const keys = [...grp.keys()].sort((a, b) => { const ia = ORD.indexOf(a), ib = ORD.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
+    const out = [];
+    for (const k of keys) {
+    const list = grp.get(k).slice().sort((a, b) => (b.montant || 0) - (a.montant || 0));
+    const tot = list.reduce((s, w) => s + (w.montant || 0), 0);
+    const hd = document.createElement('div'); hd.className = 'pf-av-h';
+    const n = document.createElement('span'); n.textContent = k === 'Plus tard' ? 'Plus tard' : 'Achats de ' + k.toLowerCase();
+    const s = document.createElement('span'); s.textContent = tot ? tot + '.- prevus' : (k === 'Plus tard' ? '' : 'montants a choisir');
+    hd.append(n, s); out.push(hd);
     const t = document.createElement('table'); t.className = 'pf-table pf-avenir'; const tb = document.createElement('tbody');
-    for (const w of ws) {
+    for (const w of list) {
       const tr = document.createElement('tr'); tr.className = 'pf-row'; tr.style.cursor = 'pointer';
       const c1 = document.createElement('td');
       const box2 = document.createElement('span'); box2.className = 'pf-logo'; const im = document.createElement('img'); im.alt = w.indice; im.referrerPolicy = 'no-referrer';
@@ -2540,9 +2560,13 @@ dash.draw('fiche-tuiles', (box) => {
       const c2 = document.createElement('td'); c2.textContent = w.indice;
       const c3 = document.createElement('td'); c3.textContent = w.niveau != null ? w.niveau.toFixed(2).replace('.', ',') + ' ' + (F.sym[w.devise] || w.devise) : 'bientot';
       const c4 = document.createElement('td'); c4.textContent = w.jour != null && w.niveau != null ? F.pct(w.jour) : '-'; if (w.jour != null) c4.className = w.jour >= 0 ? 'pf-up' : 'pf-down';
-      tr.append(c1, c2, c3, c4); tr.addEventListener('click', () => window.pfSelect(w.ticker)); tb.append(tr);
+      const c5 = document.createElement('td'); c5.className = 'pf-av-m'; c5.textContent = w.montant ? w.montant + '.-' : '';
+      c2.textContent = w.indice; tr.append(c1, c2, c5, c3, c4); tr.addEventListener('click', () => window.pfSelect(w.ticker)); tb.append(tr);
     }
-    t.append(tb); box.replaceChildren(t);
+    t.append(tb); out.push(t);
+    }
+    const note = document.createElement('p'); note.className = 'pf-note-s'; note.textContent = 'Le mois et le montant se changent dans le tableau, onglet Marche, colonnes L et M.';
+    box.replaceChildren(...out, note);
   });
 })();
 </script>

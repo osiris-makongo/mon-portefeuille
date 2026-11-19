@@ -592,6 +592,9 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 
 .pf .pf-tv { min-height: 380px; margin-top: 10px; }
 .pf .pf-tv .tradingview-widget-container, .pf .pf-tv iframe { width: 100% !important; }
+
+#pf-toast { position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 50; background: #111e; color: #fff; border: 1px solid #5fe3a1; padding: 10px 16px; font: 14px var(--pf-text); opacity: 0; pointer-events: none; transition: opacity .25s; white-space: nowrap; }
+#pf-toast.on { opacity: 1; }
 </style>
 
 <div id="pf-intro"><span>John Rockefeller</span></div>
@@ -2167,8 +2170,10 @@ window.pfLoad();
   let frame = 0;
 
   // on change d'ecran seulement en cliquant sur les onglets du bas ; la molette fait juste monter/descendre dans l'ecran
-  function show(index) {
+  const pile = []; // ecrans visites, pour le bouton retour du telephone
+  function show(index, retour) {
     if (index === current) return;
+    if (!retour && current >= 0) { pile.push(current); if (pile.length > 30) pile.shift(); }
     current = index;
     screens.forEach((screen, i) => { screen.classList.toggle('pf-on', i === index); screen.classList.toggle('pf-writing', i === index); });
     buttons.forEach((button, i) => {
@@ -2179,10 +2184,44 @@ window.pfLoad();
     if (window.pfRedraw) window.pfRedraw();
   }
   window.pfShowScreen = show;
+  window.pfScreenBack = () => { while (pile.length) { const p = pile.pop(); if (p !== current) { show(p, true); return true; } } if (current !== 0) { show(0, true); return true; } return false; };
   buttons.forEach((button, i) => button.addEventListener('click', () => show(i)));
   let start = 0; try { start = Number(sessionStorage.getItem('pf-screen')) || 0; } catch (e) {}
   show(Math.min(screens.length - 1, start));
 })();
+</script>
+<script>
+// bouton retour du telephone : on revient en arriere dans l'appli au lieu de la quitter
+(function () {
+  const garde = () => { try { history.pushState({pf: 1}, ''); } catch (e) {} };
+  try { history.replaceState({pf: 0}, ''); } catch (e) {}
+  garde();
+  let quitter = 0;
+  const toast = (t) => {
+    let el = document.getElementById('pf-toast');
+    if (!el) { el = document.createElement('div'); el.id = 'pf-toast'; document.body.append(el); }
+    el.textContent = t; el.classList.add('on');
+    clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('on'), 2000);
+  };
+  const visible = (el) => el && !el.hidden && el.offsetParent !== null;
+  function retour() {
+    const fiche = document.getElementById('pf-fiche');
+    if (fiche && !fiche.hidden) { document.getElementById('pf-fiche-close').click(); return true; }
+    const r = [...document.querySelectorAll('#retour')].find(visible);
+    if (r) { r.click(); return true; }
+    const ps = window.pfPieSel || {};
+    const k = Object.keys(ps).filter((x) => ps[x]);
+    if (k.length) { k.forEach((x) => { ps[x] = null; dash.draw('pie-' + x); }); return true; }
+    return window.pfScreenBack ? window.pfScreenBack() : false;
+  }
+  window.addEventListener('popstate', () => {
+    if (retour()) { quitter = 0; garde(); return; }
+    if (Date.now() - quitter < 2000) { history.back(); return; }
+    quitter = Date.now(); toast('Appuie encore sur retour pour quitter'); garde();
+  });
+})();
+</script>
+<script>
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 

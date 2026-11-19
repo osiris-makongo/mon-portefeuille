@@ -595,6 +595,21 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 
 #pf-toast { position: fixed; left: 50%; bottom: calc(76px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 50; background: #111e; color: #fff; border: 1px solid #5fe3a1; padding: 10px 16px; font: 14px var(--pf-text); opacity: 0; pointer-events: none; transition: opacity .25s; white-space: nowrap; }
 #pf-toast.on { opacity: 1; }
+
+.pf .pf-leg-nm { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pf .pf-leg-nm .pf-logo img { width: 16px; height: 16px; }
+.pf .pf-st { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 28px; border: 1px solid var(--pf-border); background: #000b; padding: 16px; }
+@media (max-width: 620px) { .pf .pf-st { grid-template-columns: 1fr; } }
+.pf .pf-st-g { display: grid; gap: 7px; align-content: start; }
+.pf .pf-st-t { font-weight: 700; color: #fff; font-size: 14px; margin-bottom: 2px; }
+.pf .pf-st-r { display: grid; grid-template-columns: 1fr auto 70px; gap: 10px; align-items: center; font-size: 13px; }
+.pf .pf-st-n { color: var(--color-fg-muted, #bbb); }
+.pf .pf-st-v { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; color: #fff; }
+.pf .pf-st-bar { height: 6px; background: #ffffff1a; border-radius: 3px; overflow: hidden; }
+.pf .pf-st-bar i { display: block; height: 100%; background: #5fe3a1; border-radius: 3px; }
+.pf .pf-st-help { margin-top: 8px; font-size: 13px; }
+.pf .pf-st-help summary { cursor: pointer; color: #5fe3a1; }
+.pf .pf-st-help p { margin: 6px 0; }
 </style>
 
 <div id="pf-intro"><span>John Rockefeller</span></div>
@@ -793,6 +808,8 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
     <div data-draw="pie-secteur"></div>
     <h3 class="pf-h3">Par action</h3>
     <div data-draw="pie-action"></div>
+    <h3 class="pf-h3">Statistiques (actions uniquement)</h3>
+    <div data-draw="stats-actions"></div>
   </section>
       </div>
     </section>
@@ -850,7 +867,8 @@ dash.loader('lignes_gs', {
       rows.push({nom: r[0], ticker: r[1], devise: r[2] || 'USD', cotee: r[3] || r[2] || 'USD', manuel: r[4] ? 1 : 0,
         quantite: N(r[5]), prix_moyen: N(r[6]), prix: N(r[7]), pct: N(r[8]), valeur_devise: N(r[9]), taux_chf: N(r[10]),
         valeur_chf: N(r[11]), investi_chf: N(r[12]), gain_chf: N(r[13]), gain_pct: N(r[14]), jour: N(r[15]), site: (r[16] || '').trim(),
-        pays: (r[17] || '').trim(), secteur: (r[18] || '').trim(), div: N(r[19]), div_dev: (r[20] || '').trim(), div_mois: String(r[21] || '').trim(), div_imp: N(r[22])});
+        pays: (r[17] || '').trim(), secteur: (r[18] || '').trim(), div: N(r[19]), div_dev: (r[20] || '').trim(), div_mois: String(r[21] || '').trim(), div_imp: N(r[22]),
+        f: Object.fromEntries(['capi', 'per', 'perp', 'peg', 'pb', 'pfcf', 'roe', 'roa', 'mb', 'mo', 'mn', 'cca', 'cbpa', 'dfp'].map((k, j) => [k, N(r[23 + j])]))});
     }
     return {data: rows, columns: ['nom', 'ticker', 'devise', 'cotee', 'manuel', 'quantite', 'prix_moyen', 'prix', 'pct', 'valeur_devise', 'taux_chf', 'valeur_chf', 'investi_chf', 'gain_chf', 'gain_pct', 'jour', 'pays', 'secteur', 'div', 'div_dev', 'div_mois', 'div_imp']};
   }
@@ -1163,7 +1181,7 @@ window.pfState = window.pfState || {cur: 'CHF', sel: null, proj: 'TOTAL', per: '
 if (!window.pfState.per) window.pfState.per = '1j';
 if (!window.pfState.proj) window.pfState.proj = 'TOTAL';
 if (!window.pfState.cur) window.pfState.cur = 'CHF';
-window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'pie-pays', 'pie-secteur', 'pie-action', 'vs-tuiles', 'vs-chart', 'fiche-tuiles', 'tv-chart', 'cours-chart', 'cours-note', 'avenir'].forEach((n) => dash.draw(n)); };
+window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'pie-pays', 'pie-secteur', 'pie-action', 'stats-actions', 'vs-tuiles', 'vs-chart', 'fiche-tuiles', 'tv-chart', 'cours-chart', 'cours-note', 'avenir'].forEach((n) => dash.draw(n)); };
 window.pfPerTxt = {'1j': '24 h', '5j': '5 jours', '1m': '1 mois', '6m': '6 mois', 'ytd': 'le 1er janvier', '1a': '1 an', '5a': '5 ans', 'tout': 'le debut'};
 document.querySelectorAll('.pf-per-btn').forEach((b) => b.addEventListener('click', () => {
   window.pfState.per = b.getAttribute('data-per');
@@ -1821,10 +1839,23 @@ dash.draw('proj-chart', (el) => {
       .attr('stroke', '#000').attr('stroke-width', 1.5).style('cursor', 'pointer').style('opacity', (a) => (sel && a.data.label !== sel ? 0.35 : 1))
       .on('click', (ev, a) => pick(a.data.label));
     svg.append('text').attr('text-anchor', 'middle').attr('dominant-baseline', 'central').attr('fill', '#fff').style('font-size', '15px').text(money(tot, R));
+    if (kind === 'action') {
+      const mid = d3.arc().innerRadius(r * 0.78).outerRadius(r * 0.78);
+      arcs.filter((a) => a.data.v / tot >= 0.06).forEach((a) => {
+        const [cx, cy] = mid.centroid(a); const l = a.data.lines && a.data.lines[0]; const g = svg.append('g').style('pointer-events', 'none');
+        if (l && l.site) {
+          g.append('circle').attr('cx', cx).attr('cy', cy - 5).attr('r', 9.5).attr('fill', '#fff');
+          g.append('image').attr('href', 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(l.site) + '&sz=64').attr('x', cx - 7).attr('y', cy - 12).attr('width', 14).attr('height', 14);
+        }
+        g.append('text').attr('x', cx).attr('y', cy + 13).attr('text-anchor', 'middle').attr('fill', '#fff').style('font-size', '9px').style('font-weight', '700')
+          .style('paint-order', 'stroke').style('stroke', '#0008').style('stroke-width', '2px').text(Math.round(a.data.v / tot * 100) + ' %');
+      });
+    }
     const leg = el('div', 'pf-leg');
     items.forEach((x, i) => {
       const row = el('div', 'pf-leg-r'); const sw = document.createElement('i'); sw.style.background = COLORS[i % COLORS.length];
-      const b = el('b'); b.append(el('span', '', (x.v / tot * 100).toFixed(1).replace('.', ',') + ' %'), el('span', 'pf-leg-m', money(x.v, R))); row.append(sw, el('span', '', x.label), b);
+      const b = el('b'); b.append(el('span', '', (x.v / tot * 100).toFixed(1).replace('.', ',') + ' %'), el('span', 'pf-leg-m', money(x.v, R)));
+      const nm = el('span', 'pf-leg-nm'); if (kind === 'action' && x.lines && x.lines[0].site) nm.append(logo(x.lines[0])); nm.append(el('span', '', x.label)); row.append(sw, nm, b);
       row.classList.add('pf-leg-click'); if (x.label === sel) row.classList.add('pf-leg-on'); row.addEventListener('click', () => pick(x.label));
       leg.append(row);
     });
@@ -1849,6 +1880,49 @@ dash.draw('proj-chart', (el) => {
   const group = (ls, key) => { const m = new Map(); for (const l of ls) { const k = l[key] || 'Autre'; if (!m.has(k)) m.set(k, {label: k, v: 0, lines: []}); const g = m.get(k); g.v += l.valeur_chf; g.lines.push(l); } return [...m.values()]; };
   dash.draw('pie-pays', (box) => { const ls = lines(); if (!ls) return waiting(box, 220); pie(box, group(ls, 'pays'), rateOf(ls), 'pays'); });
   dash.draw('pie-secteur', (box) => { const ls = lines(); if (!ls) return waiting(box, 220); pie(box, group(ls, 'secteur'), rateOf(ls), 'secteur'); });
+  dash.draw('stats-actions', (box) => {
+    const ls = lines(); if (!ls) return waiting(box, 260);
+    const tot = ls.reduce((s, l) => s + l.valeur_chf, 0);
+    const st = ls.filter((l) => !/etf/i.test(l.nom));
+    const vst = st.reduce((s, l) => s + l.valeur_chf, 0);
+    const top5 = ls.map((l) => l.valeur_chf).sort((a, b) => b - a).slice(0, 5).reduce((s, v) => s + v, 0);
+    const ok = (x) => x != null && Number.isFinite(x);
+    const avg = (k) => { let w = 0, s = 0; for (const l of st) { const x = l.f && l.f[k]; if (ok(x)) { w += l.valeur_chf; s += l.valeur_chf * x; } } return w ? s / w : null; };
+    const harm = (k) => { let w = 0, s = 0; for (const l of st) { const x = l.f && l.f[k]; if (ok(x) && x > 0) { w += l.valeur_chf; s += l.valeur_chf / x; } } return s ? w / s : null; };
+    const fr = (x, d) => x.toFixed(d).replace('.', ',');
+    const pc = (x) => (ok(x) ? fr(x, 1) + ' %' : '-');
+    const nb = (x) => (ok(x) ? fr(x, 2) : '-');
+    const row = (n, v, bar, neg) => {
+      const r2 = el('div', 'pf-st-r'); r2.append(el('span', 'pf-st-n', n), el('span', 'pf-st-v' + (bar != null ? (neg ? ' pf-down' : ' pf-up') : ''), v));
+      if (bar != null) { const b = el('span', 'pf-st-bar'); const s = document.createElement('i'); s.style.width = Math.max(4, Math.min(100, bar * 100)) + '%'; if (neg) s.style.background = 'var(--color-bad)'; b.append(s); r2.append(b); } else r2.append(el('span'));
+      return r2;
+    };
+    const grp = (t, rows) => { const g = el('div', 'pf-st-g'); g.append(el('div', 'pf-st-t', t), ...rows); return g; };
+    const v = {roe: avg('roe'), roa: avg('roa'), mb: avg('mb'), mo: avg('mo'), mn: avg('mn'), cca: avg('cca'), cbpa: avg('cbpa'), dfp: avg('dfp'), capi: avg('capi'), peg: avg('peg'),
+      per: harm('per'), perp: harm('perp'), pfcf: harm('pfcf'), pb: harm('pb')};
+    const pos = (x, ref) => (ok(x) ? Math.abs(x) / ref : null);
+    const card = el('div', 'pf-st');
+    card.append(
+      grp('General', [row("Nombre d'actions", String(st.length)), row('Top 5 du portefeuille', pc(top5 / tot * 100)), row('Part en actions', pc(vst / tot * 100)),
+        row('Capi moyenne', ok(v.capi) ? Math.round(v.capi) + ' Mrd $' : '-')]),
+      grp('Marges', [row('Marge brute', pc(v.mb), pos(v.mb, 80), v.mb < 0), row('Marge ope.', pc(v.mo), pos(v.mo, 50), v.mo < 0), row('Marge nette', pc(v.mn), pos(v.mn, 40), v.mn < 0)]),
+      grp('Rentabilite', [row('ROE', pc(v.roe), pos(v.roe, 70), v.roe < 0), row('ROA', pc(v.roa), pos(v.roa, 25), v.roa < 0)]),
+      grp('Croissance', [row("Croissance chiffre d'affaires", pc(v.cca), pos(v.cca, 25), v.cca < 0), row('Croissance BPA', pc(v.cbpa), pos(v.cbpa, 40), v.cbpa < 0)]),
+      grp('Sante', [row('Dette / fonds propres', nb(v.dfp), ok(v.dfp) ? Math.max(0, 1 - v.dfp / 2) : null, v.dfp > 1.5)]),
+      grp('Valorisation', [row('PER', nb(v.per)), row('PER previsionnel', nb(v.perp)), row('P/FCF', nb(v.pfcf)), row('Price / Book', nb(v.pb)), row('PEG', nb(v.peg))]));
+    const sans = st.filter((l) => !l.f || !ok(l.f.roe)).map((l) => l.nom);
+    const note = el('p', 'pf-note-s', 'Moyennes ponderees par le poids de chaque action. Chiffres releves le 19.11.2026 (finviz), a mettre a jour de temps en temps dans le tableau, onglet Mes actions, colonnes X a AK.' + (sans.length ? ' Pas de chiffres pour : ' + sans.join(', ') + '.' : ''));
+    const det = el('details', 'pf-st-help'); det.append(el('summary', '', "C'est quoi ces chiffres ?"));
+    [['Marges', "sur 100 francs de ventes, combien il reste apres les couts (brute), apres le fonctionnement (ope.) et a la fin, apres tout (nette)."],
+     ['ROE / ROA', "combien l'entreprise gagne par rapport a l'argent de ses actionnaires (ROE) ou a tout ce qu'elle possede (ROA). Plus c'est haut, mieux elle utilise son argent."],
+     ['Croissance', "evolution des ventes (chiffre d'affaires) et du benefice par action (BPA) sur un an."],
+     ['Dette / fonds propres', 'dettes divisees par l argent des actionnaires. Sous 1, c est sain.'],
+     ['PER', "prix de l'action divise par le benefice par action : combien d'annees de benefices tu paies. Autour de 15-25 c'est normal, plus haut c'est cher. Previsionnel = avec les benefices attendus l'an prochain."],
+     ['P/FCF et Price / Book', "prix compare a l'argent vraiment encaisse (FCF) et a ce que l'entreprise possede (Book)."],
+     ['PEG', 'le PER divise par la croissance. Sous 1, la croissance est bon marche ; au-dessus de 2, c est cher.']]
+      .forEach(([a, b]) => { const p = el('p'); p.append(el('b', '', a + ' : '), document.createTextNode(b)); det.append(p); });
+    box.replaceChildren(card, note, det);
+  });
   dash.draw('pie-action', (box) => { const ls = lines(); if (!ls) return waiting(box, 220); pie(box, ls.map((l) => ({label: l.nom, v: l.valeur_chf, lines: [l]})), rateOf(ls), 'action'); });
 
   // ---------- toi contre le monde ----------

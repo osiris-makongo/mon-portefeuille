@@ -679,6 +679,16 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
   .pf .pf-pie { grid-template-columns: 1fr !important; }
   .pf .pf-st-r { grid-template-columns: 1fr auto 46px; }
 }
+
+.pf #ecran-pl .pf-section { max-width: 760px; margin-inline: auto; }
+.pf .an-plh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.pf .an-plr { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid #ffffff0d; }
+.pf .an-plr .pf-logo img { width: 36px; height: 36px; }
+.pf .an-plbar { position: relative; height: 6px; margin-top: 7px; background: #ffffff10; border-radius: 3px; }
+.pf .an-plbar::after { content: ''; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: #ffffff40; }
+.pf .an-plbar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+.pf .an-plbar i.up { left: 50%; background: #5fe3a1; }
+.pf .an-plbar i.down { right: 50%; background: #ff7070; }
 </style>
 
 <div id="pf-intro"><span>John Rockefeller</span></div>
@@ -897,6 +907,14 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
     <div data-draw="pie-pays"></div>
     <h3 class="pf-h3">Par secteur</h3>
     <div data-draw="pie-secteur"></div>
+  </section>
+      </div>
+    </section>
+    <section class="pf-screen" id="ecran-pl" aria-label="Profits et pertes">
+      <div class="pf-screen-content" tabindex="0" aria-label="Profits et pertes">
+  <section class="pf-section">
+    <h2 class="pf-section-title">Profits et pertes</h2>
+    <div data-draw="pl-page"></div>
   </section>
       </div>
     </section>
@@ -1268,7 +1286,7 @@ window.pfState = window.pfState || {cur: 'CHF', sel: null, proj: 'TOTAL', per: '
 if (!window.pfState.per) window.pfState.per = '1j';
 if (!window.pfState.proj) window.pfState.proj = 'TOTAL';
 if (!window.pfState.cur) window.pfState.cur = 'CHF';
-window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'an-outils', 'an-rep', 'pie-pays', 'pie-secteur', 'pie-action', 'stats-actions', 'vs-tuiles', 'vs-chart', 'fiche-tuiles', 'tv-chart', 'cours-chart', 'cours-note', 'avenir'].forEach((n) => dash.draw(n)); };
+window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'an-outils', 'an-rep', 'pl-page', 'pie-pays', 'pie-secteur', 'pie-action', 'stats-actions', 'vs-tuiles', 'vs-chart', 'fiche-tuiles', 'tv-chart', 'cours-chart', 'cours-note', 'avenir'].forEach((n) => dash.draw(n)); };
 window.pfPerTxt = {'1j': '24 h', '5j': '5 jours', '1m': '1 mois', '6m': '6 mois', 'ytd': 'le 1er janvier', '1a': '1 an', '5a': '5 ans', 'tout': 'le debut'};
 document.querySelectorAll('.pf-per-btn').forEach((b) => b.addEventListener('click', () => {
   window.pfState.per = b.getAttribute('data-per');
@@ -2017,7 +2035,81 @@ dash.draw('proj-chart', (el) => {
   // ---------- outils d'analyse (facon Revolut) ----------
   window.pfAn = window.pfAn || {per: '1m', apports: true, vue: 'actif'};
   const AN_PER = [['1j', '1J'], ['5j', '1S'], ['1m', '1M'], ['6m', '6M'], ['1a', '1A'], ['tout', 'Tout']];
-  const anRedraw = () => { dash.draw('an-outils'); dash.draw('an-rep'); };
+  const anRedraw = () => { dash.draw('an-outils'); dash.draw('an-rep'); dash.draw('pl-page'); };
+  // valeur et apports sur la periode (1J et 1S : releves horaires + releves de l'appli)
+  const anRows = (per, hd, tt) => {
+    const pr = window.pfPerRow('TOTAL') || {};
+    const depuis = per === 'tout' ? null : pr['depuis_' + per];
+    let rows = hd.data.filter((r) => r.symbol === 'TOTAL' && (!depuis || r.date >= depuis)).map((r) => ({d: r.date, v: r.valeur_chf, i: r.investi_chf}));
+    const today = new Date().toISOString().slice(0, 10);
+    rows = rows.filter((r) => r.d < today);
+    if ((per === '1j' || per === '5j') && depuis) {
+      const su = dash.data('suivi_gs');
+      const pts = (su.status === 'ok' && su.data ? su.data : []).filter((r) => r.symbol === 'TOTAL' && r.ts.slice(0, 10) > depuis)
+        .concat(window.pfSnaps ? window.pfSnaps('TOTAL').filter((r) => r.ts.slice(0, 10) > depuis) : []).sort((a, b) => (a.ts < b.ts ? -1 : 1));
+      const seen = new Set(); const fine = [];
+      for (const p of pts) { const k = p.ts.slice(0, 15); if (seen.has(k)) continue; seen.add(k); fine.push({d: p.ts, v: p.valeur_chf, i: p.investi_chf}); }
+      const base = rows.filter((r) => r.d <= depuis).slice(-1);
+      if (fine.length >= 2) rows = base.concat(fine);
+    }
+    rows.push({d: today, v: tt.valeur_chf, i: tt.investi_chf});
+    if (rows.length < 2) rows.unshift({...rows[0]});
+    return rows;
+  };
+  dash.draw('pl-page', (box) => {
+    const ls = lines(); const hd = dash.data('historique'); const tt = (dash.data('total').data || [])[0];
+    if (!ls || hd.status !== 'ok' || !hd.data || !tt) return waiting(box, 420);
+    const R = rateOf(ls), A = window.pfAn, per = A.per;
+    const pr = window.pfPerRow('TOTAL') || {};
+    const g = pr['gain_' + per + '_chf'] || 0, pc = pr['pct_' + per];
+    const pb = el('div', 'an-pers');
+    AN_PER.forEach(([k, t]) => { const b = el('button', 'an-per' + (k === per ? ' on' : ''), t); b.type = 'button'; b.addEventListener('click', () => { A.per = k; anRedraw(); }); pb.append(b); });
+    const txt = per === 'tout' ? 'depuis le debut' : 'depuis ' + window.pfPerTxt[per];
+    // carte principale + courbe des gains
+    const c = el('div', 'an-card');
+    c.append(el('div', 'an-lab', 'Profits et pertes ' + txt));
+    const big = el('div', 'an-big'); big.append(el('span', g >= 0 ? 'pf-up' : 'pf-down', signMoney(g, R)), el('span', 'an-chg ' + (g >= 0 ? 'pf-up' : 'pf-down'), pc != null ? pct2(pc) : ''));
+    c.append(big);
+    const rows = anRows(per, hd, tt); const r0 = rows[0];
+    const G = rows.map((r) => (r.v - r.i) - (r0.v - r0.i));
+    const W = 640, H = 220, m = {l: 4, r: 96, t: 14, b: 10};
+    const svg = d3.create('svg').attr('viewBox', [0, 0, W, H]).attr('class', 'an-svg');
+    const x = d3.scaleLinear().domain([0, G.length - 1]).range([m.l, W - m.r]);
+    const ext = d3.extent(G.concat([0])); const pad = Math.max((ext[1] - ext[0]) * 0.1, 0.5);
+    const y = d3.scaleLinear().domain([ext[0] - pad, ext[1] + pad]).range([H - m.b, m.t]);
+    const cl = 'plc' + Math.random().toString(36).slice(2, 7);
+    const defs = svg.append('defs');
+    defs.append('clipPath').attr('id', cl + 'u').append('rect').attr('x', 0).attr('y', 0).attr('width', W).attr('height', y(0));
+    defs.append('clipPath').attr('id', cl + 'd').append('rect').attr('x', 0).attr('y', y(0)).attr('width', W).attr('height', H - y(0));
+    [ext[0] - pad, 0, ext[1] + pad].filter((t, k, arr) => k !== 1 || (Math.abs(y(0) - y(arr[0])) > 30 && Math.abs(y(0) - y(arr[2])) > 30)).forEach((t) => svg.append('text').attr('x', W - 2).attr('y', y(t) + 6).attr('text-anchor', 'end').style('fill', '#fff').style('font-size', '20px').text((t >= 0 ? '+' : '-') + money(Math.abs(t), R).replace(/,\d\d/, '')));
+    svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(0)).attr('y2', y(0)).style('stroke', '#ffffff55').style('stroke-dasharray', '5 5');
+    const area = d3.area().curve(d3.curveMonotoneX).x((v, k) => x(k)).y0(y(0)).y1((v) => y(v));
+    svg.append('path').datum(G).attr('d', area).attr('clip-path', `url(#${cl}u)`).style('fill', '#5fe3a1').style('fill-opacity', 0.22);
+    svg.append('path').datum(G).attr('d', area).attr('clip-path', `url(#${cl}d)`).style('fill', '#ff7070').style('fill-opacity', 0.22);
+    const ln = d3.line().curve(d3.curveMonotoneX).x((v, k) => x(k)).y((v) => y(v));
+    svg.append('path').datum(G).attr('d', ln).attr('clip-path', `url(#${cl}u)`).style('fill', 'none').style('stroke', '#5fe3a1').style('stroke-width', 2.5);
+    svg.append('path').datum(G).attr('d', ln).attr('clip-path', `url(#${cl}d)`).style('fill', 'none').style('stroke', '#ff7070').style('stroke-width', 2.5);
+    c.append(svg.node());
+    const pl = el('div', 'an-pl'); pl.append(el('div', '', signMoney(0, R) + ' realises (actions vendues)'), el('div', '', signMoney(g, R) + ' non realises (actions encore detenues)'));
+    c.append(pl);
+    // par action
+    const items = ls.map((l) => { const p = window.pfPerRow(l.ticker) || {}; return {l, g: p['gain_' + per + '_chf'], p: p['pct_' + per]}; }).filter((z) => z.g != null).sort((a, b) => b.g - a.g);
+    const win = items.filter((z) => z.g > 0.005).length, los = items.filter((z) => z.g < -0.005).length;
+    const c2 = el('div', 'an-card'); c2.style.marginTop = '12px';
+    const hdr = el('div', 'an-plh'); hdr.append(el('div', 'an-lab', 'Par action'), el('div', 'an-small', win + ' en gain - ' + los + ' en perte'));
+    c2.append(hdr);
+    const mx = Math.max(...items.map((z) => Math.abs(z.g)), 0.01);
+    for (const z of items) {
+      const r = el('div', 'an-plr an-click');
+      const bar = el('div', 'an-plbar'); const f = el('i'); f.style.width = (Math.abs(z.g) / mx * 50) + '%'; f.className = z.g >= 0 ? 'up' : 'down'; bar.append(f);
+      const mid = el('div', 'an-row-m'); mid.append(el('div', 'an-row-n', z.l.nom), bar);
+      const rt = el('div', 'an-row-r'); rt.append(el('div', z.g >= 0 ? 'pf-up' : 'pf-down', signMoney(z.g, R)), el('div', 'an-row-s ' + ((z.p || 0) >= 0 ? 'pf-up' : 'pf-down'), z.p != null ? pct2(z.p) : ''));
+      r.append(logo(z.l), mid, rt);
+      r.addEventListener('click', () => { window.pfShowScreen(2); setTimeout(() => window.pfSelect(z.l.ticker), 50); });
+      c2.append(r);
+    }
+    box.replaceChildren(pb, c, c2);
+  });
   const signMoney = (v, R) => (v >= 0 ? '+' : '-') + money(Math.abs(v), R);
   const pct2 = (x) => (x >= 0 ? '+' : '') + x.toFixed(2).replace('.', ',') + ' %';
   dash.draw('an-outils', (box) => {
@@ -2110,7 +2202,7 @@ dash.draw('proj-chart', (el) => {
     const best = byG[0], worst = byG[byG.length - 1];
     const ln = (l) => { const d = el('div', 'an-bw'); d.append(logo(l), el('span', l.gain_pct >= 0 ? 'pf-up' : 'pf-down', pct2(l.gain_pct))); return d; };
     c6.append(el('div', 'an-lab', 'Mes actions'), el('div', 'an-small', 'Meilleure'), ln(best), el('div', 'an-small', 'Pire'), ln(worst));
-    open(c1, 1, 'vue'); open(c2, 1, 'contre'); open(c3, 2); open(c4, 4); open(c5, 3); open(c6, 2);
+    open(c1, 1, 'vue'); open(c2, 1, 'vue'); open(c3, 5); open(c4, 4); open(c5, 3); open(c6, 2);
     const head = el('div', 'an-head'); head.append(el('span', 'an-lab', 'Tous les comptes'), pb);
     wrap.append(c1, c2, c3, c4, c5, c6);
     box.replaceChildren(head, wrap);
@@ -2168,7 +2260,7 @@ dash.draw('proj-chart', (el) => {
       const mid = el('div', 'an-row-m'); mid.append(el('div', 'an-row-n', it.label), el('div', 'an-row-s', it.sub));
       const rt = el('div', 'an-row-r'); rt.append(el('div', '', (it.v / tot * 100).toFixed(2).replace('.', ',') + ' %'), el('div', 'an-row-s', money(it.v, R)));
       r2.append(ic, mid, rt);
-      if (it.l) { r2.classList.add('an-click'); r2.addEventListener('click', () => { window.pfShowScreen(2); setTimeout(() => window.pfSelect(it.l.symbol), 50); }); }
+      if (it.l) { r2.classList.add('an-click'); r2.addEventListener('click', () => { window.pfShowScreen(2); setTimeout(() => window.pfSelect(it.l.ticker), 50); }); }
       list.append(r2);
     }
     card.append(list);
@@ -2185,10 +2277,19 @@ dash.draw('proj-chart', (el) => {
     const priceOn = (d) => { let b = null; for (const k of pxd) { if (k <= d) b = px.get(k); else break; } return b != null ? b : px.get(pxd[0]); };
     const buys = a.data.slice().sort((x, y) => (x.date < y.date ? -1 : 1));
     const units = buys.map((b) => ({date: b.date, u: (b.cout_chf || 0) / (priceOn(b.date) * window.pfFx(ch.data, b.date).USD)}));
-    return h.data.filter((r) => r.symbol === 'TOTAL').map((r) => {
+    const out = h.data.filter((r) => r.symbol === 'TOTAL').map((r) => {
       const u = units.filter((x) => x.date <= r.date).reduce((s, x) => s + x.u, 0);
       return {d: r.date, toi: r.valeur_chf, monde: u * priceOn(r.date) * window.pfFx(ch.data, r.date).USD, inv: r.investi_chf};
     });
+    const tt = (dash.data('total').data || [])[0]; const mk = dash.data('marche_gs');
+    const w = mk.data ? mk.data.find((r) => r.ticker === 'NYSEARCA:URTH') : null;
+    if (tt && w && w.niveau && tt.usdchf) {
+      const today = new Date().toISOString().slice(0, 10);
+      while (out.length && out[out.length - 1].d >= today) out.pop();
+      const u = units.reduce((s, x) => s + x.u, 0);
+      out.push({d: today, toi: tt.valeur_chf, monde: u * w.niveau * tt.usdchf, inv: tt.investi_chf});
+    }
+    return out;
   };
   // debut de la periode choisie (24 h, 48 h, ... le debut)
   const vsRange = (S) => {

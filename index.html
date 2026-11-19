@@ -1310,6 +1310,7 @@ window.pfSelect = function (sym) {
   const fiche = document.getElementById('pf-fiche');
   const surActions = document.querySelector('#ecran-actions.pf-on');
   if (fiche && surActions) {
+    if (sym && fiche.hidden && window.pfNavPush) window.pfNavPush();
     fiche.hidden = !sym;
     document.querySelectorAll('#retour').forEach((b) => { b.hidden = !sym; });
     window.pfRedraw();
@@ -2027,7 +2028,19 @@ dash.draw('proj-chart', (el) => {
     const depuis = per === 'tout' ? null : pr['depuis_' + per];
     let rows = hd.data.filter((r) => r.symbol === 'TOTAL' && (!depuis || r.date >= depuis)).map((r) => ({d: r.date, v: r.valeur_chf, i: r.investi_chf}));
     const today = new Date().toISOString().slice(0, 10);
-    rows = rows.filter((r) => r.d < today); rows.push({d: today, v: tt.valeur_chf, i: tt.investi_chf});
+    rows = rows.filter((r) => r.d < today);
+    if ((per === '1j' || per === '5j') && depuis) {
+      const su = dash.data('suivi_gs');
+      const pts = (su.status === 'ok' && su.data ? su.data : []).filter((r) => r.symbol === 'TOTAL' && r.ts.slice(0, 10) > depuis)
+        .concat(window.pfSnaps ? window.pfSnaps('TOTAL').filter((r) => r.ts.slice(0, 10) > depuis) : [])
+        .sort((a, b) => (a.ts < b.ts ? -1 : 1));
+      const seen = new Set(); const fine = [];
+      for (const p of pts) { const k = p.ts.slice(0, 15); if (seen.has(k)) continue; seen.add(k); fine.push({d: p.ts, v: p.valeur_chf, i: p.investi_chf}); }
+      const base = rows.filter((r) => r.d <= depuis).slice(-1);
+      if (fine.length >= 2) rows = base.concat(fine);
+    }
+    if (window.pfSnapSave) window.pfSnapSave();
+    rows.push({d: today, v: tt.valeur_chf, i: tt.investi_chf});
     if (rows.length < 2) rows.unshift({d: rows[0].d, v: rows[0].v, i: rows[0].i});
     const gainP = pr['gain_' + per + '_chf'], pctP = pr['pct_' + per];
     const gainT = tt.valeur_chf - tt.investi_chf;
@@ -2053,7 +2066,7 @@ dash.draw('proj-chart', (el) => {
     const gr = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
     gr.append('stop').attr('offset', '0%').attr('stop-color', col).attr('stop-opacity', 0.3); gr.append('stop').attr('offset', '100%').attr('stop-color', col).attr('stop-opacity', 0);
     [lo, (lo + hi) / 2, hi].forEach((t) => { svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(t)).attr('y2', y(t)).attr('stroke', '#ffffff14');
-      svg.append('text').attr('x', W - 2).attr('y', y(t) + 4).attr('text-anchor', 'end').attr('fill', '#999').style('font-size', '20px').text(money(t, R).replace(/,\d\d/, '')); });
+      svg.append('text').attr('x', W - 2).attr('y', y(t) + 4).attr('text-anchor', 'end').style('fill', '#fff').style('font-size', '20px').text(money(t, R).replace(/,\d\d/, '')); });
     svg.append('path').datum(rows).attr('fill', `url(#${gid})`).attr('d', d3.area().curve(d3.curveMonotoneX).x((r, k) => x(k)).y0(H - m.b).y1((r) => y(r.v)));
     if (A.apports) svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', '#7f9cd6').attr('stroke-width', 2).attr('d', d3.line().curve(d3.curveStepAfter).x((r, k) => x(k)).y((r) => y(r.i)));
     svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', col).attr('stroke-width', 2.4).attr('d', d3.line().curve(d3.curveMonotoneX).x((r, k) => x(k)).y((r) => y(r.v)));
@@ -2141,8 +2154,8 @@ dash.draw('proj-chart', (el) => {
       else svg.append('text').attr('x', cx).attr('y', cy + 4).attr('text-anchor', 'middle').attr('fill', '#fff').style('font-size', '15px').style('font-weight', 700)
         .text(b.autre ? '+' : (ABR[b.label] || b.label.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase()));
     });
-    const tag = (yy, t1, t2) => { const g = svg.append('g'); g.append('rect').attr('x', W - m.r + 8).attr('y', yy - 18).attr('width', m.r - 8).attr('height', t2 ? 54 : 32).attr('rx', 8).attr('fill', '#1f1f23');
-      g.append('text').attr('x', W - m.r + 18).attr('y', yy + 5).attr('fill', '#bbb').style('font-size', '19px').text(t1); if (t2) g.append('text').attr('x', W - m.r + 18).attr('y', yy + 27).attr('fill', '#bbb').style('font-size', '19px').text(t2); };
+    const tag = (yy, t1, t2) => { const g = svg.append('g'); g.append('rect').attr('x', W - m.r + 8).attr('y', yy - 18).attr('width', m.r - 8).attr('height', t2 ? 54 : 32).attr('rx', 8).style('fill', '#000').style('stroke', '#ffffff40');
+      g.append('text').attr('x', W - m.r + 18).attr('y', yy + 5).style('fill', '#fff').style('font-size', '19px').text(t1); if (t2) g.append('text').attr('x', W - m.r + 18).attr('y', yy + 27).style('fill', '#fff').style('font-size', '19px').text(t2); };
     svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(avg)).attr('y2', y(avg)).attr('stroke', '#aaa').attr('stroke-dasharray', '6 5');
     const short = (v) => money(v, R).replace(/,\d\d/, '');
     tag(m.t + 4, short(mx)); tag(Math.max(m.t + 50, Math.min(y(avg), H - m.b - 60)), short(avg), 'moyenne'); tag(H - m.b - 2, short(0));
@@ -2484,7 +2497,7 @@ window.pfLoad();
   const pile = []; // ecrans visites, pour le bouton retour du telephone
   function show(index, retour) {
     if (index === current) return;
-    if (!retour && current >= 0) { pile.push(current); if (pile.length > 30) pile.shift(); }
+    if (!retour && current >= 0) { pile.push(current); if (pile.length > 30) pile.shift(); if (index > 0 && window.pfNavPush) window.pfNavPush(); }
     current = index;
     screens.forEach((screen, i) => { screen.classList.toggle('pf-on', i === index); screen.classList.toggle('pf-writing', i === index); });
     buttons.forEach((button, i) => {
@@ -2506,9 +2519,16 @@ window.pfLoad();
 <script>
 // bouton retour du telephone : on revient en arriere dans l'appli au lieu de la quitter
 (function () {
-  const garde = () => { try { history.pushState({pf: 1}, ''); } catch (e) {} };
+  const nav = window.pfNav = {depth: 0, armed: false};
   try { history.replaceState({pf: 0}, ''); } catch (e) {}
-  garde();
+  window.pfNavPush = () => { try { history.pushState({pf: 'n'}, ''); nav.depth++; } catch (e) {} };
+  const arm = () => { if (nav.armed) return; try { history.pushState({pf: 'g'}, ''); nav.armed = true; } catch (e) {} };
+  ['pointerdown', 'touchstart', 'keydown'].forEach((ev) => document.addEventListener(ev, arm, {capture: true, passive: true}));
+  // les boutons Retour / Fermer de l'appli passent aussi par l'historique
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest && e.target.closest('.an-back, #pf-fiche-close');
+    if (b && nav.depth > 0 && !nav.internal) { e.stopImmediatePropagation(); e.preventDefault(); history.back(); }
+  }, true);
   let quitter = 0;
   const toast = (t) => {
     let el = document.getElementById('pf-toast');
@@ -2519,7 +2539,7 @@ window.pfLoad();
   const visible = (el) => el && !el.hidden && el.offsetParent !== null;
   function retour() {
     const fiche = document.getElementById('pf-fiche');
-    if (fiche && !fiche.hidden) { document.getElementById('pf-fiche-close').click(); return true; }
+    if (fiche && !fiche.hidden) { nav.internal = true; try { document.getElementById('pf-fiche-close').click(); } finally { nav.internal = false; } return true; }
     const r = [...document.querySelectorAll('#retour')].find(visible);
     if (r) { r.click(); return true; }
     const ps = window.pfPieSel || {};
@@ -2528,9 +2548,15 @@ window.pfLoad();
     return window.pfScreenBack ? window.pfScreenBack() : false;
   }
   window.addEventListener('popstate', () => {
-    if (retour()) { quitter = 0; garde(); return; }
+    if (nav.depth > 0) {
+      nav.depth--; nav.internal = true;
+      try { const f = document.getElementById('pf-fiche'); if (f && !f.hidden) document.getElementById('pf-fiche-close').click(); else if (window.pfScreenBack) window.pfScreenBack(); } finally { nav.internal = false; }
+      return;
+    }
+    nav.armed = false;
+    if (retour()) { quitter = 0; return; }
     if (Date.now() - quitter < 2000) { history.back(); return; }
-    quitter = Date.now(); toast('Appuie encore sur retour pour quitter'); garde();
+    quitter = Date.now(); toast('Appuie encore sur retour pour quitter');
   });
 })();
 </script>

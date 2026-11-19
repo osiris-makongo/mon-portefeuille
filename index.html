@@ -610,6 +610,42 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
 .pf .pf-st-help { margin-top: 8px; font-size: 13px; }
 .pf .pf-st-help summary { cursor: pointer; color: #5fe3a1; }
 .pf .pf-st-help p { margin: 6px 0; }
+
+.pf .an-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pf .an-card { background: #17171bdd; border-radius: 22px; padding: 18px; border: 1px solid #ffffff10; min-width: 0; }
+.pf .an-wide { grid-column: 1 / -1; }
+.pf .an-lab { color: #b9b9c0; font-size: 15px; font-weight: 600; }
+.pf .an-big { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: 30px; color: #fff; margin: 4px 0 8px; font-family: var(--pf-display); }
+.pf .an-chg { font-size: 15px; }
+.pf .an-mid { font-size: 24px; color: #fff; margin: 6px 0; font-family: var(--pf-display); overflow-wrap: anywhere; }
+.pf .an-svg { width: 100%; height: auto; display: block; }
+.pf .an-spark { width: 100%; height: 70px; display: block; margin-top: 6px; }
+.pf .an-pers { display: flex; gap: 4px; background: #232328; border-radius: 999px; padding: 4px; margin: 10px 0; overflow-x: auto; }
+.pf .an-per { flex: 1; border: 0; background: none; color: #aaa; padding: 8px 10px; border-radius: 999px; font: 600 14px var(--pf-text); cursor: pointer; white-space: nowrap; }
+.pf .an-per.on { background: #3a3a40; color: #fff; }
+.pf .an-app { display: flex; align-items: center; gap: 12px; background: #232328; border-radius: 18px; padding: 14px 16px; cursor: pointer; font-size: 15px; color: #fff; }
+.pf .an-app input { width: 22px; height: 22px; accent-color: #fff; }
+.pf .an-app b { margin-left: auto; font-weight: normal; color: #bbb; }
+.pf .an-pl { margin-top: 18px; display: grid; gap: 4px; font-size: 14px; color: #ddd; }
+.pf .an-small { font-size: 13px; color: #999; margin-top: 8px; }
+.pf .an-acc { color: #6f8fff; font-weight: 600; margin-top: 18px; }
+.pf .an-c4l { min-width: 0; }
+.pf .an-wide.an-click { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: end; cursor: pointer; }
+.pf .an-minibars { display: flex; gap: 12px; align-items: flex-end; }
+.pf .an-mb { display: grid; justify-items: center; gap: 6px; }
+.pf .an-mb-t { width: 12px; height: 110px; background: #4a4a50; border-radius: 6px; display: flex; align-items: flex-end; overflow: hidden; }
+.pf .an-mb-t i { width: 100%; background: #4f7cff; border-radius: 6px; display: block; }
+.pf .an-mb .pf-logo img { width: 22px; height: 22px; }
+.pf .an-dots { width: 26px; height: 26px; border-radius: 50%; background: #333; color: #fff; display: grid; place-items: center; font-size: 12px; }
+.pf .an-list { margin-top: 10px; display: grid; }
+.pf .an-row { display: grid; grid-template-columns: 46px 1fr auto; gap: 14px; align-items: center; padding: 12px 0; border-top: 1px solid #ffffff0d; }
+.pf .an-row .pf-logo img, .pf .an-ic { width: 40px; height: 40px; }
+.pf .an-ic { border-radius: 50%; background: #2a2a2e; color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+.pf .an-row-n { color: #fff; font-size: 16px; font-weight: 600; }
+.pf .an-row-s { color: #999; font-size: 13px; margin-top: 2px; }
+.pf .an-row-r { text-align: right; color: #fff; font-size: 15px; white-space: nowrap; }
+.pf .an-click { cursor: pointer; }
+@media (max-width: 620px) { .pf .an-big { font-size: 26px; } .pf .an-mid { font-size: 20px; } .pf .an-card { padding: 14px; border-radius: 18px; } .pf .an-mb-t { height: 80px; } .pf .an-minibars { gap: 8px; } }
 </style>
 
 <div id="pf-intro"><span>John Rockefeller</span></div>
@@ -801,7 +837,11 @@ body:has(#dash-root:not([hidden])) { overflow: hidden; padding: 0; }
     <section class="pf-screen" id="ecran-repartition" aria-label="Repartition">
       <div class="pf-screen-content" tabindex="0" aria-label="Repartition">
   <section class="pf-section">
-    <h2 class="pf-section-title">Repartition</h2>
+    <h2 class="pf-section-title">Outils d'analyse</h2>
+    <div data-draw="an-outils"></div>
+    <h3 class="pf-h3" id="an-rep-h">Repartition des actifs</h3>
+    <div data-draw="an-rep"></div>
+    <h2 class="pf-section-title" style="margin-top: 34px">En camemberts</h2>
     <h3 class="pf-h3">Par pays</h3>
     <div data-draw="pie-pays"></div>
     <h3 class="pf-h3">Par secteur</h3>
@@ -1181,7 +1221,7 @@ window.pfState = window.pfState || {cur: 'CHF', sel: null, proj: 'TOTAL', per: '
 if (!window.pfState.per) window.pfState.per = '1j';
 if (!window.pfState.proj) window.pfState.proj = 'TOTAL';
 if (!window.pfState.cur) window.pfState.cur = 'CHF';
-window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'pie-pays', 'pie-secteur', 'pie-action', 'stats-actions', 'vs-tuiles', 'vs-chart', 'fiche-tuiles', 'tv-chart', 'cours-chart', 'cours-note', 'avenir'].forEach((n) => dash.draw(n)); };
+window.pfRedraw = function () { ['marche-chip', 'marche-phrase', 'phrase', 't-valeur', 't-date', 't-gain', 't-gainpct', 't-investi', 't-per-lab', 't-per', 't-per-sub', 'detail-titre', 'detail-sous', 'chart', 'table', 'proj-sujet', 'proj-titre', 'proj-phrase', 'proj-tuiles', 'proj-chart', 'div-tuiles', 'div-mois', 'div-table', 'an-outils', 'an-rep', 'pie-pays', 'pie-secteur', 'pie-action', 'stats-actions', 'vs-tuiles', 'vs-chart', 'fiche-tuiles', 'tv-chart', 'cours-chart', 'cours-note', 'avenir'].forEach((n) => dash.draw(n)); };
 window.pfPerTxt = {'1j': '24 h', '5j': '5 jours', '1m': '1 mois', '6m': '6 mois', 'ytd': 'le 1er janvier', '1a': '1 an', '5a': '5 ans', 'tout': 'le debut'};
 document.querySelectorAll('.pf-per-btn').forEach((b) => b.addEventListener('click', () => {
   window.pfState.per = b.getAttribute('data-per');
@@ -1924,6 +1964,145 @@ dash.draw('proj-chart', (el) => {
     box.replaceChildren(card, note, det);
   });
   dash.draw('pie-action', (box) => { const ls = lines(); if (!ls) return waiting(box, 220); pie(box, ls.map((l) => ({label: l.nom, v: l.valeur_chf, lines: [l]})), rateOf(ls), 'action'); });
+
+
+  // ---------- outils d'analyse (facon Revolut) ----------
+  window.pfAn = window.pfAn || {per: '1m', apports: true, vue: 'actif'};
+  const AN_PER = [['1j', '1J'], ['5j', '1S'], ['1m', '1M'], ['6m', '6M'], ['1a', '1A'], ['tout', 'Tout']];
+  const anRedraw = () => { dash.draw('an-outils'); dash.draw('an-rep'); };
+  const signMoney = (v, R) => (v >= 0 ? '+' : '-') + money(Math.abs(v), R);
+  const pct2 = (x) => (x >= 0 ? '+' : '') + x.toFixed(2).replace('.', ',') + ' %';
+  dash.draw('an-outils', (box) => {
+    const ls = lines(); const hd = dash.data('historique'); const tt = (dash.data('total').data || [])[0];
+    if (!ls || hd.status !== 'ok' || !hd.data || !tt) return waiting(box, 420);
+    const R = rateOf(ls), A = window.pfAn, per = A.per;
+    const pr = window.pfPerRow('TOTAL') || {};
+    const depuis = per === 'tout' ? null : pr['depuis_' + per];
+    let rows = hd.data.filter((r) => r.symbol === 'TOTAL' && (!depuis || r.date >= depuis)).map((r) => ({d: r.date, v: r.valeur_chf, i: r.investi_chf}));
+    const today = new Date().toISOString().slice(0, 10);
+    rows = rows.filter((r) => r.d < today); rows.push({d: today, v: tt.valeur_chf, i: tt.investi_chf});
+    if (rows.length < 2) rows.unshift({d: rows[0].d, v: rows[0].v, i: rows[0].i});
+    const gainP = pr['gain_' + per + '_chf'], pctP = pr['pct_' + per];
+    const gainT = tt.valeur_chf - tt.investi_chf;
+    const wrap = el('div', 'an-grid');
+    // periodes
+    const pb = el('div', 'an-pers');
+    AN_PER.forEach(([k, t]) => { const b = el('button', 'an-per' + (k === per ? ' on' : ''), t); b.type = 'button'; b.addEventListener('click', () => { A.per = k; anRedraw(); }); pb.append(b); });
+    // 1. valeur totale + courbe avec apports
+    const c1 = el('div', 'an-card an-wide');
+    const top = el('div', 'an-top'); top.append(el('div', 'an-lab', 'Valeur totale'));
+    const vv = el('div', 'an-big'); vv.append(el('span', '', money(tt.valeur_chf, R)), el('span', 'an-chg ' + (gainP >= 0 ? 'pf-up' : 'pf-down'), (gainP >= 0 ? '▲ ' : '▼ ') + money(Math.abs(gainP || 0), R)));
+    vv.lastChild.classList.add('pf-keepsym');
+    top.append(vv);
+    const W = 640, H = 230, m = {l: 4, r: 96, t: 14, b: 10};
+    const svg = d3.create('svg').attr('viewBox', [0, 0, W, H]).attr('class', 'an-svg');
+    const x = d3.scaleLinear().domain([0, rows.length - 1]).range([m.l, W - m.r]);
+    const vals = rows.flatMap((r) => (A.apports ? [r.v, r.i] : [r.v]));
+    const lo = per === 'tout' ? 0 : d3.min(vals) * 0.995, hi = d3.max(vals) * 1.005;
+    const y = d3.scaleLinear().domain([lo, hi]).range([H - m.b, m.t]);
+    const up = (gainP || 0) >= 0, col = up ? '#5fe3a1' : '#ff7070';
+    const gid = 'ang' + Math.random().toString(36).slice(2, 7);
+    const gr = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+    gr.append('stop').attr('offset', '0%').attr('stop-color', col).attr('stop-opacity', 0.3); gr.append('stop').attr('offset', '100%').attr('stop-color', col).attr('stop-opacity', 0);
+    [lo, (lo + hi) / 2, hi].forEach((t) => { svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(t)).attr('y2', y(t)).attr('stroke', '#ffffff14');
+      svg.append('text').attr('x', W - 2).attr('y', y(t) + 4).attr('text-anchor', 'end').attr('fill', '#999').style('font-size', '20px').text(money(t, R).replace(/,\d\d/, '')); });
+    svg.append('path').datum(rows).attr('fill', `url(#${gid})`).attr('d', d3.area().curve(d3.curveMonotoneX).x((r, k) => x(k)).y0(H - m.b).y1((r) => y(r.v)));
+    if (A.apports) svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', '#7f9cd6').attr('stroke-width', 2).attr('d', d3.line().curve(d3.curveStepAfter).x((r, k) => x(k)).y((r) => y(r.i)));
+    svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', col).attr('stroke-width', 2.4).attr('d', d3.line().curve(d3.curveMonotoneX).x((r, k) => x(k)).y((r) => y(r.v)));
+    const ap = el('label', 'an-app'); const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = A.apports;
+    cb.addEventListener('change', () => { A.apports = cb.checked; dash.draw('an-outils'); });
+    ap.append(cb, el('span', '', 'Afficher les apports'), el('b', '', money(tt.investi_chf, R)));
+    c1.append(top, svg.node(), pb, ap);
+    // 2. performance
+    const c2 = el('div', 'an-card');
+    c2.append(el('div', 'an-lab', 'Performance'), el('div', 'an-mid ' + (pctP >= 0 ? 'pf-up' : 'pf-down'), pctP != null ? pct2(pctP) : '-'));
+    const r0 = rows[0];
+    const sp = rows.map((r) => (r.v - r.i) - (r0.v - r0.i));
+    const s2 = d3.create('svg').attr('viewBox', [0, 0, 200, 70]).attr('class', 'an-spark');
+    const sx = d3.scaleLinear().domain([0, sp.length - 1]).range([0, 200]), sy = d3.scaleLinear().domain(d3.extent(sp.concat([0]))).range([66, 4]);
+    const sc = (pctP || 0) >= 0 ? '#5fe3a1' : '#ff7070';
+    s2.append('path').datum(sp).attr('fill', sc).attr('fill-opacity', 0.15).attr('d', d3.area().x((v, k) => sx(k)).y0(70).y1((v) => sy(v)));
+    s2.append('path').datum(sp).attr('fill', 'none').attr('stroke', sc).attr('stroke-width', 2).attr('d', d3.line().x((v, k) => sx(k)).y((v) => sy(v)));
+    c2.append(s2.node());
+    // 3. profits et pertes
+    const c3 = el('div', 'an-card');
+    c3.append(el('div', 'an-lab', 'Profits et pertes'), el('div', 'an-mid ' + ((gainP || 0) >= 0 ? 'pf-up' : 'pf-down'), signMoney(gainP || 0, R)));
+    const pl = el('div', 'an-pl'); pl.append(el('div', '', signMoney(0, R) + ' realises'), el('div', '', signMoney(gainP || 0, R) + ' non realises'));
+    c3.append(pl, el('div', 'an-small', 'Depuis le debut : ' + signMoney(gainT, R)));
+    // 4. actif le plus detenu
+    const c4 = el('div', 'an-card an-wide an-click');
+    const tot = ls.reduce((s, l) => s + l.valeur_chf, 0);
+    const srt = ls.slice().sort((a, b) => b.valeur_chf - a.valeur_chf);
+    const left = el('div', 'an-c4l'); left.append(el('div', 'an-lab', 'Repartition des actifs'), el('div', 'an-small an-acc', 'Actif le plus detenu'),
+      el('div', 'an-mid', srt[0].nom + ' - ' + (srt[0].valeur_chf / tot * 100).toFixed(2).replace('.', ',') + ' %'));
+    const bars = el('div', 'an-minibars');
+    const four = srt.slice(0, 4).map((l) => ({l, p: l.valeur_chf / tot})); const rest = 1 - four.reduce((s, z) => s + z.p, 0);
+    four.concat([{l: null, p: rest}]).forEach((z) => { const c = el('div', 'an-mb'); const t = el('div', 'an-mb-t'); const f = el('i'); f.style.height = Math.max(4, z.p * 100) + '%'; if (!z.l) f.style.background = '#4f7cff'; t.append(f);
+      c.append(t, z.l ? logo(z.l) : el('span', 'an-dots', '+')); bars.append(c); });
+    c4.append(left, bars);
+    c4.addEventListener('click', () => { const t = document.getElementById('an-rep-h'); if (t) t.scrollIntoView({behavior: 'smooth'}); });
+    wrap.append(c1, c2, c3, c4);
+    box.replaceChildren(wrap);
+  });
+  const ABR = {'Etats-Unis': 'US', 'Suisse': 'CH', 'Pays-Bas': 'NL', 'Autriche': 'AT', 'Japon': 'JP', 'Monde': 'MO', 'France': 'FR', 'Allemagne': 'DE'};
+  dash.draw('an-rep', (box) => {
+    const ls = lines(); if (!ls) return waiting(box, 360);
+    const R = rateOf(ls), A = window.pfAn;
+    const tot = ls.reduce((s, l) => s + l.valeur_chf, 0);
+    let items;
+    if (A.vue === 'actif') items = ls.map((l) => ({label: l.nom, v: l.valeur_chf, l, sub: String(+l.quantite.toFixed(4)).replace('.', ',') + ' ' + (l.ticker.split(':').pop()) + ' - ' + money(l.valeur_chf / l.quantite, R)}));
+    else {
+      const key = A.vue === 'produit' ? ((l) => (/etf/i.test(l.nom) ? 'ETF' : 'Actions')) : ((l) => l[A.vue] || 'Autre');
+      const mp = new Map(); for (const l of ls) { const k = key(l); if (!mp.has(k)) mp.set(k, {label: k, v: 0, n: 0}); const g = mp.get(k); g.v += l.valeur_chf; g.n++; }
+      items = [...mp.values()].map((g) => ({...g, sub: g.n + (g.n > 1 ? ' investissements' : ' investissement')}));
+    }
+    items.sort((a, b) => b.v - a.v);
+    const card = el('div', 'an-card an-rep');
+    const sel = el('div', 'an-pers');
+    [['actif', 'Par actif'], ['secteur', 'Par secteur'], ['pays', 'Par pays'], ['produit', 'Par produit']].forEach(([k, t]) => {
+      const b = el('button', 'an-per' + (A.vue === k ? ' on' : ''), t); b.type = 'button'; b.addEventListener('click', () => { A.vue = k; dash.draw('an-rep'); }); sel.append(b); });
+    card.append(el('div', 'an-big', money(tot, R)), sel);
+    // barres
+    const MAXB = 11;
+    let barsI = items.slice(0, MAXB); if (items.length > MAXB) barsI = barsI.concat([{label: 'Autres', v: items.slice(MAXB).reduce((s, x) => s + x.v, 0), autre: 1}]);
+    const W = 640, H = 280, m = {l: 6, r: 132, t: 20, b: 60};
+    const svg = d3.create('svg').attr('viewBox', [0, 0, W, H]).attr('class', 'an-svg');
+    const mx = d3.max(barsI, (b) => b.v), avg = tot / items.length;
+    const y = d3.scaleLinear().domain([0, mx]).range([H - m.b, m.t]);
+    const bw = (W - m.l - m.r) / barsI.length;
+    const gd = svg.append('defs').append('linearGradient').attr('id', 'anbar').attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+    gd.append('stop').attr('offset', '0%').attr('stop-color', '#4f7cff'); gd.append('stop').attr('offset', '100%').attr('stop-color', '#7fa3ff');
+    svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', H - m.b).attr('y2', H - m.b).attr('stroke', '#666');
+    barsI.forEach((b, k) => {
+      const x0 = m.l + k * bw + bw * 0.18, w = bw * 0.64;
+      svg.append('rect').attr('x', x0).attr('y', y(b.v)).attr('width', w).attr('height', Math.max(2, H - m.b - y(b.v))).attr('rx', Math.min(6, w / 3)).attr('fill', 'url(#anbar)');
+      const cx = x0 + w / 2, cy = H - m.b + 28; const rr = Math.min(18, bw * 0.4);
+      svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', Math.min(19, bw * 0.42)).attr('fill', '#2a2a2e');
+      if (b.l && b.l.site) { svg.append('circle').attr('cx', cx).attr('cy', cy).attr('r', rr).attr('fill', '#fff');
+        svg.append('image').attr('href', 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(b.l.site) + '&sz=64').attr('x', cx - rr * 0.7).attr('y', cy - rr * 0.7).attr('width', rr * 1.4).attr('height', rr * 1.4); }
+      else svg.append('text').attr('x', cx).attr('y', cy + 4).attr('text-anchor', 'middle').attr('fill', '#fff').style('font-size', '15px').style('font-weight', 700)
+        .text(b.autre ? '+' : (ABR[b.label] || b.label.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase()));
+    });
+    const tag = (yy, t1, t2) => { const g = svg.append('g'); g.append('rect').attr('x', W - m.r + 8).attr('y', yy - 18).attr('width', m.r - 8).attr('height', t2 ? 54 : 32).attr('rx', 8).attr('fill', '#1f1f23');
+      g.append('text').attr('x', W - m.r + 18).attr('y', yy + 5).attr('fill', '#bbb').style('font-size', '19px').text(t1); if (t2) g.append('text').attr('x', W - m.r + 18).attr('y', yy + 27).attr('fill', '#bbb').style('font-size', '19px').text(t2); };
+    svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(avg)).attr('y2', y(avg)).attr('stroke', '#aaa').attr('stroke-dasharray', '6 5');
+    const short = (v) => money(v, R).replace(/,\d\d/, '');
+    tag(m.t + 4, short(mx)); tag(Math.max(m.t + 50, Math.min(y(avg), H - m.b - 60)), short(avg), 'moyenne'); tag(H - m.b - 2, short(0));
+    card.append(svg.node());
+    // liste
+    const list = el('div', 'an-list');
+    for (const it of items) {
+      const r2 = el('div', 'an-row');
+      const ic = it.l ? logo(it.l) : el('span', 'an-ic', ABR[it.label] || it.label.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase());
+      const mid = el('div', 'an-row-m'); mid.append(el('div', 'an-row-n', it.label), el('div', 'an-row-s', it.sub));
+      const rt = el('div', 'an-row-r'); rt.append(el('div', '', (it.v / tot * 100).toFixed(2).replace('.', ',') + ' %'), el('div', 'an-row-s', money(it.v, R)));
+      r2.append(ic, mid, rt);
+      if (it.l) { r2.classList.add('an-click'); r2.addEventListener('click', () => { window.pfShowScreen(2); setTimeout(() => window.pfSelect(it.l.symbol), 50); }); }
+      list.append(r2);
+    }
+    card.append(list);
+    box.replaceChildren(card);
+  });
 
   // ---------- toi contre le monde ----------
   const vsSeries = () => {

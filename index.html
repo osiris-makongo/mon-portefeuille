@@ -1050,7 +1050,7 @@ dash.loader('marche_gs', {
       const r = v[i] || [];
       if (!r[1]) continue;
       const pc = (x) => (N(x) == null ? null : Math.round(N(x) * 10000) / 100);
-      rows.push({indice: r[0], ticker: r[1], niveau: N(r[2]) || null, jour: pc(r[3]), mois: pc(r[5]), plus_haut: N(r[6]), ecart: pc(r[7]), site: (r[8] || '').trim(), devise: (r[9] || '').trim(), avenir: (r[10] || '').trim() === 'avenir' ? 1 : 0, mois: (r[11] || '').trim(), montant: N(r[12])});
+      rows.push({indice: r[0], ticker: r[1], niveau: N(r[2]) || null, jour: pc(r[3]), mois: pc(r[5]), plus_haut: N(r[6]), ecart: pc(r[7]), site: (r[8] || '').trim(), devise: (r[9] || '').trim(), avenir: (r[10] || '').trim() === 'avenir' ? 1 : 0, mois_achat: (r[11] || '').trim(), montant: N(r[12])});
     }
     return {data: rows, columns: ['indice', 'ticker', 'niveau', 'jour', 'mois', 'plus_haut', 'ecart']};
   }
@@ -2541,7 +2541,7 @@ dash.draw('fiche-tuiles', (box) => {
     const F = window.pfFmt;
     const ORD = ['Novembre', 'Decembre', 'Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre'];
     const grp = new Map();
-    for (const w of ws) { const k = w.mois || 'Plus tard'; if (!grp.has(k)) grp.set(k, []); grp.get(k).push(w); }
+    for (const w of ws) { const k = w.mois_achat || 'Plus tard'; if (!grp.has(k)) grp.set(k, []); grp.get(k).push(w); }
     const keys = [...grp.keys()].sort((a, b) => { const ia = ORD.indexOf(a), ib = ORD.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); });
     const out = [];
     for (const k of keys) {
